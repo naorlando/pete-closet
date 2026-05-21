@@ -480,6 +480,17 @@ function Closet({
   )
 }
 
+// ── Slot hit zones for unequipping (fractions of Pete's 551px height) ─────────
+
+const SLOT_HIT_ZONES: Record<string, { top: number; height: number }> = {
+  head:  { top: 0,    height: 0.28 },  // hat covers top 28%
+  neck:  { top: 0.22, height: 0.20 },  // scarf covers 22–42%
+  torso: { top: 0.30, height: 0.40 },  // shirt covers 30–70%
+  body:  { top: 0.28, height: 0.65 },  // pyjamas covers 28–93%
+  legs:  { top: 0.55, height: 0.40 },  // jeans covers 55–95%
+  feet:  { top: 0.80, height: 0.20 },  // shoes cover 80–100%
+}
+
 // ── Pete character: stacked transparent layers ─────────────────────────────────
 
 interface PeteProps {
@@ -539,9 +550,10 @@ function Pete({
     return {
       zIndex,
       transform: `translate(${adj.x}px, ${adj.y}px) scale(${adj.scale}) rotate(${adj.rotate}deg)`,
-      // Always enable pointer events on equipped layers — normal mode needs grab, debug mode needs reposition
-      pointerEvents: 'auto' as const,
-      cursor: debugMode ? (isSelected ? 'move' : 'pointer') : 'grab',
+      // Debug mode: keep pointer events so layer drag (select → drag) works on the img.
+      // Normal mode: none — hit-zone divs handle unequip dragging with tight bounds.
+      pointerEvents: debugMode ? 'auto' : 'none',
+      cursor: debugMode ? (isSelected ? 'move' : 'pointer') : 'default',
       ...(debugMode ? {
         outline: isSelected
           ? '2px solid rgba(255,0,0,0.6)'
@@ -690,6 +702,35 @@ function Pete({
             onPointerDown={e => handleLayerPointerDown(SLOT.HEAD, e)}
           />
         )}
+
+        {/* Hit zones for unequipping — tight divs per slot, only in normal mode */}
+        {!debugMode && (Object.entries(equipped) as [SlotId, string | null][]).map(([slotId, itemId]) => {
+          if (!itemId) return null;
+          const zone = SLOT_HIT_ZONES[slotId];
+          if (!zone) return null;
+          const item = ITEMS.find(i => i.id === itemId);
+          if (!item) return null;
+          return (
+            <div
+              key={slotId}
+              style={{
+                position: 'absolute',
+                left: '10%',
+                width: '80%',
+                top: `${zone.top * 100}%`,
+                height: `${zone.height * 100}%`,
+                cursor: 'grab',
+                zIndex: 10,
+                // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEquippedPointerDown(item, e);
+              }}
+            />
+          );
+        })}
       </div>
     </div>
   )
@@ -1077,6 +1118,15 @@ export default function App() {
   })
 
   const peteRef = useRef<HTMLDivElement>(null)
+
+  // ── Preload Pete variant images on mount ────────────────────────────────────
+
+  useEffect(() => {
+    [peteBase, peteNoArms, peteNoFeet, peteNoArmsNoFeet].forEach(src => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
 
   // ── Drag: global pointer events ─────────────────────────────────────────────
 
