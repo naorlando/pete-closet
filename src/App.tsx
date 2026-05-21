@@ -1,37 +1,37 @@
 import { useState, useEffect, useRef } from 'react'
 
-import roomBg from './assets/room-background.png'
+import roomBg from './assets/room-background.webp'
 
 // Base Pete — always visible, never changes
-import peteBase from './assets/pete/pete-base.png'
-import peteNoArms from './assets/pete/pete-no-arms.png'
-import peteNoFeet from './assets/pete/pete-no-feet.png'
-import peteNoArmsNoFeet from './assets/pete/pete-no-arms-no-feet.png'
+import peteBase from './assets/pete/pete-base.webp'
+import peteNoArms from './assets/pete/pete-no-arms.webp'
+import peteNoFeet from './assets/pete/pete-no-feet.webp'
+import peteNoArmsNoFeet from './assets/pete/pete-no-arms-no-feet.webp'
 
 // Layers (transparent PNGs, same 1086×1448 canvas as base)
-import layerJeans from './assets/layers/layer-jeans.png'
-import layerShirt from './assets/layers/layer-shirt.png'
-import layerPyjamas from './assets/layers/layer-pyjamas.png'
-import layerTrainers from './assets/layers/layer-trainers.png'
-import layerSocks from './assets/layers/layer-socks.png'
-import layerSocksLeft from './assets/layers/layer-socks-left.png'
-import layerSocksRight from './assets/layers/layer-socks-right.png'
-import layerCowboyBoots from './assets/layers/layer-cowboy-boots.png'
-import layerHat from './assets/layers/layer-hat.png'
-import layerScarf from './assets/layers/layer-scarf.png'
+import layerJeans from './assets/layers/layer-jeans.webp'
+import layerShirt from './assets/layers/layer-shirt.webp'
+import layerPyjamas from './assets/layers/layer-pyjamas.webp'
+import layerTrainers from './assets/layers/layer-trainers.webp'
+import layerSocks from './assets/layers/layer-socks.webp'
+import layerSocksLeft from './assets/layers/layer-socks-left.webp'
+import layerSocksRight from './assets/layers/layer-socks-right.webp'
+import layerCowboyBoots from './assets/layers/layer-cowboy-boots.webp'
+import layerHat from './assets/layers/layer-hat.webp'
+import layerScarf from './assets/layers/layer-scarf.webp'
 
 // Thumbnail for socks closet display
-import thumbSocksCloset from './assets/thumbnails/thumb-socks-closet.png'
+import thumbSocksCloset from './assets/thumbnails/thumb-socks-closet.webp'
 
 // Tight-cropped closet thumbnails
-import closetShirt   from './assets/thumbnails/closet-shirt.png'
-import closetJeans   from './assets/thumbnails/closet-jeans.png'
-import closetPyjamas from './assets/thumbnails/closet-pyjamas.png'
-import closetTrainers from './assets/thumbnails/closet-trainers.png'
-import closetSocks   from './assets/thumbnails/closet-socks.png'
-import closetBoots   from './assets/thumbnails/closet-cowboy-boots.png'
-import closetHat     from './assets/thumbnails/closet-hat.png'
-import closetScarf   from './assets/thumbnails/closet-scarf.png'
+import closetShirt   from './assets/thumbnails/closet-shirt.webp'
+import closetJeans   from './assets/thumbnails/closet-jeans.webp'
+import closetPyjamas from './assets/thumbnails/closet-pyjamas.webp'
+import closetTrainers from './assets/thumbnails/closet-trainers.webp'
+import closetSocks   from './assets/thumbnails/closet-socks.webp'
+import closetBoots   from './assets/thumbnails/closet-cowboy-boots.webp'
+import closetHat     from './assets/thumbnails/closet-hat.webp'
+import closetScarf   from './assets/thumbnails/closet-scarf.webp'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -533,16 +533,6 @@ function Pete({
     ? peteNoFeet
     : peteBase
 
-  // Debug logging
-  console.log('[Pete] equipped:', JSON.stringify(equipped))
-  console.log('[Pete] layers:', {
-    feet:  equippedFeet?.word  ?? '—',
-    legs:  equippedLegs?.word  ?? '—',
-    torso: equippedTorso?.word ?? '—',
-    body:  equippedBody?.word  ?? '—',
-    neck:  equippedNeck?.word  ?? '—',
-    head:  equippedHead?.word  ?? '—',
-  })
 
   function buildLayerStyle(zIndex: number, key: AdjustmentKey): React.CSSProperties {
     const adj = adjustments[key]
@@ -1122,10 +1112,10 @@ export default function App() {
   // ── Preload Pete variant images on mount ────────────────────────────────────
 
   useEffect(() => {
-    [peteBase, peteNoArms, peteNoFeet, peteNoArmsNoFeet].forEach(src => {
-      const img = new Image();
-      img.src = src;
-    });
+    const srcs = [peteBase, peteNoArms, peteNoFeet, peteNoArmsNoFeet, roomBg,
+      layerShirt, layerJeans, layerPyjamas, layerHat, layerScarf,
+      layerTrainers, layerCowboyBoots, layerSocks, layerSocksLeft, layerSocksRight]
+    srcs.forEach(src => { const img = new window.Image(); img.src = src })
   }, []);
 
   // ── Drag: global pointer events ─────────────────────────────────────────────
@@ -1181,7 +1171,7 @@ export default function App() {
       })
     }
 
-    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerup', onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)
@@ -1216,7 +1206,7 @@ export default function App() {
       }
     }
 
-    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerup', onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)
@@ -1249,7 +1239,7 @@ export default function App() {
       closetAdjDragRef.current = null
     }
 
-    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', onMove, { passive: true })
     window.addEventListener('pointerup', onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)

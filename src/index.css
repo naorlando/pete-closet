@@ -26,7 +26,6 @@ html, body, #root {
   transform-origin: center center;
   overflow: hidden;
   flex-shrink: 0;
-  will-change: transform;
 }
 
 @keyframes hang-swing {
