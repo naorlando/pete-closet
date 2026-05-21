@@ -113,7 +113,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerShirt,
     thumbnail: layerShirt,
     closetThumbnail: closetShirt,
-    closetHeight: 'calc(68vh * 0.22)',
+    closetHeight: 'calc(551px * 0.22)',
     defaultAdjustment: { x: 16, y: 11, scale: 1.10, rotate: 0 },
   },
   // LEGS — hang on rod
@@ -125,7 +125,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerJeans,
     thumbnail: layerJeans,
     closetThumbnail: closetJeans,
-    closetHeight: 'calc(68vh * 0.32)',
+    closetHeight: 'calc(551px * 0.32)',
     defaultAdjustment: { x: 6, y: 66, scale: 0.85, rotate: 0 },
   },
   // BODY — full outfit, hangs on rod, overrides legs + torso
@@ -137,7 +137,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerPyjamas,
     thumbnail: layerPyjamas,
     closetThumbnail: closetPyjamas,
-    closetHeight: 'calc(68vh * 0.30)',
+    closetHeight: 'calc(551px * 0.30)',
     defaultAdjustment: { x: 14, y: 9, scale: 1.00, rotate: 0 },
   },
   // HEAD — hat (middle shelf)
@@ -149,7 +149,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerHat,
     thumbnail: layerHat,
     closetThumbnail: closetHat,
-    closetHeight: 'calc(68vh * 0.15)',
+    closetHeight: 'calc(551px * 0.15)',
     defaultAdjustment: { x: 48, y: -50, scale: 1.15, rotate: 0 },
   },
   // NECK — scarf (middle shelf)
@@ -161,7 +161,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerScarf,
     thumbnail: layerScarf,
     closetThumbnail: closetScarf,
-    closetHeight: 'calc(68vh * 0.15)',
+    closetHeight: 'calc(551px * 0.15)',
     defaultAdjustment: { x: -20, y: 27, scale: 1.15, rotate: 0 },
   },
   // FEET — bottom boxes
@@ -173,7 +173,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerTrainers,
     thumbnail: layerTrainers,
     closetThumbnail: closetTrainers,
-    closetHeight: 'calc(68vh * 0.18)',
+    closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
     defaultAdjustment: { x: 2, y: 5, scale: 1.10, rotate: 0 },
   },
@@ -185,7 +185,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerSocks,
     thumbnail: thumbSocksCloset,
     closetThumbnail: closetSocks,
-    closetHeight: 'calc(68vh * 0.07)',
+    closetHeight: 'calc(551px * 0.07)',
     isShoe: true,
     isSplit: true,
     layerZ: 1,
@@ -198,7 +198,7 @@ const ITEMS: ClothingItem[] = [
     layer: layerCowboyBoots,
     thumbnail: layerCowboyBoots,
     closetThumbnail: closetBoots,
-    closetHeight: 'calc(68vh * 0.18)',
+    closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
     defaultAdjustment: { x: 2, y: 20, scale: 1.10, rotate: 0 },
   },
@@ -333,7 +333,7 @@ function Closet({
             alt={item.word}
             className="object-contain -mt-1"
             style={{
-              height: item.closetHeight ?? 'calc(68vh * 0.9)',
+              height: item.closetHeight ?? 'calc(551px * 0.9)',
               width: 'auto',
               ...itemGlowStyle(item),
               transition: 'filter 0.15s',
@@ -391,7 +391,7 @@ function Closet({
           alt={item.word}
           className="object-contain"
           style={{
-            height: item.closetHeight ?? 'calc(68vh * 0.9)',
+            height: item.closetHeight ?? 'calc(551px * 0.9)',
             width: 'auto',
             transform: `translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
             ...itemGlowStyle(item),
@@ -451,7 +451,7 @@ function Closet({
           alt={item.word}
           className="object-contain"
           style={{
-            height: item.closetHeight ?? 'calc(68vh * 0.9)',
+            height: item.closetHeight ?? 'calc(551px * 0.9)',
             width: 'auto',
             transform: `translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
             ...itemGlowStyle(item),
@@ -584,7 +584,7 @@ function Pete({
       className="absolute select-none"
       style={{ left: '38%', bottom: '14%', transform: 'translateX(-50%)' }}
     >
-      <div className="relative" style={{ height: '68vh', width: 'auto' }}>
+      <div className="relative" style={{ height: '551px', width: 'auto' }}>
 
         {/* z=1 — Base Pete, always visible */}
         <img
@@ -704,7 +704,7 @@ interface GhostDragProps {
 function GhostDrag({ drag }: GhostDragProps) {
   return (
     <div
-      className="fixed pointer-events-none z-50 flex flex-col items-center"
+      className="absolute pointer-events-none z-50 flex flex-col items-center"
       style={{
         left: drag.x,
         top: drag.y,
@@ -784,7 +784,7 @@ function DebugPanel({
   if (equippedKeys.length === 0) {
     return (
       <div
-        className="fixed bottom-16 left-4 z-50 rounded-lg p-2 text-xs text-white/60"
+        className="absolute bottom-16 left-4 z-50 rounded-lg p-2 text-xs text-white/60"
         style={{ background: 'rgba(0,0,0,0.75)', minWidth: 180 }}
       >
         No layers equipped
@@ -794,7 +794,7 @@ function DebugPanel({
 
   return (
     <div
-      className="fixed bottom-16 left-4 z-50 rounded-lg p-2 font-mono text-xs"
+      className="absolute bottom-16 left-4 z-50 rounded-lg p-2 font-mono text-xs"
       style={{ background: 'rgba(0,0,0,0.82)', minWidth: 240 }}
     >
       <p className="text-yellow-400 font-bold mb-1 text-[10px] uppercase tracking-widest">
@@ -986,6 +986,24 @@ function DebugPanel({
   )
 }
 
+// ── Game scale hook ────────────────────────────────────────────────────────────
+
+const GAME_W = 1440
+const GAME_H = 810
+
+function useGameScale() {
+  const [scale, setScale] = useState(() =>
+    Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H)
+  )
+  useEffect(() => {
+    const update = () =>
+      setScale(Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H))
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
+  return scale
+}
+
 // ── App ────────────────────────────────────────────────────────────────────────
 
 
@@ -999,6 +1017,12 @@ const EMPTY_EQUIPPED: Record<SlotId, string | null> = {
 }
 
 export default function App() {
+  const scale    = useGameScale()
+  const scaleRef = useRef(scale)
+  scaleRef.current = scale
+
+  const canvasRef = useRef<HTMLDivElement>(null)
+
   const [equipped, setEquipped]       = useState<Record<SlotId, string | null>>(EMPTY_EQUIPPED)
   const [drag, setDrag]               = useState<DragState | null>(null)
   const [lastWord, setLastWord]       = useState<VocabWord | null>(null)
@@ -1032,7 +1056,16 @@ export default function App() {
     if (!drag) return
 
     function onMove(e: PointerEvent) {
-      setDrag(d => (d ? { ...d, x: e.clientX, y: e.clientY } : null))
+      const s = scaleRef.current
+      const canvas = canvasRef.current
+      if (!canvas) {
+        setDrag(d => (d ? { ...d, x: e.clientX, y: e.clientY } : null))
+        return
+      }
+      const rect = canvas.getBoundingClientRect()
+      const x = (e.clientX - rect.left) / s
+      const y = (e.clientY - rect.top)  / s
+      setDrag(d => (d ? { ...d, x, y } : null))
     }
 
     function onUp(e: PointerEvent) {
@@ -1042,6 +1075,7 @@ export default function App() {
         const peteEl = peteRef.current
         if (peteEl) {
           const rect   = peteEl.getBoundingClientRect()
+          // Pete rect is in screen-space; expand hit area by 20 screen px
           const onPete =
             e.clientX >= rect.left  - 20 &&
             e.clientX <= rect.right + 20 &&
@@ -1085,8 +1119,9 @@ export default function App() {
     function onMove(e: PointerEvent) {
       const state = debugDragRef.current
       if (!state) return
-      const dx = e.clientX - state.startPointerX
-      const dy = e.clientY - state.startPointerY
+      const s  = scaleRef.current
+      const dx = (e.clientX - state.startPointerX) / s
+      const dy = (e.clientY - state.startPointerY) / s
       setAdjustments(prev => ({
         ...prev,
         [state.slotId]: {
@@ -1119,8 +1154,9 @@ export default function App() {
     function onMove(e: PointerEvent) {
       const state = closetAdjDragRef.current
       if (!state) return
-      const dx = e.clientX - state.startPointerX
-      const dy = e.clientY - state.startPointerY
+      const s  = scaleRef.current
+      const dx = (e.clientX - state.startPointerX) / s
+      const dy = (e.clientY - state.startPointerY) / s
       setClosetAdjustments(prev => ({
         ...prev,
         [state.id]: {
@@ -1156,12 +1192,24 @@ export default function App() {
   const equippedIds = new Set(Object.values(equipped).filter((v): v is string => v !== null))
   const draggingId  = drag?.item.id
 
+  function clientToCanvas(clientX: number, clientY: number) {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: clientX, y: clientY }
+    const rect = canvas.getBoundingClientRect()
+    const s    = scaleRef.current
+    return {
+      x: (clientX - rect.left) / s,
+      y: (clientY - rect.top)  / s,
+    }
+  }
+
   function startDrag(item: ClothingItem, e: React.PointerEvent) {
     if (debugMode) return   // disable normal drag when debug is on
     e.preventDefault()
     setHoveredId(undefined)
     const isEquipped = equippedIds.has(item.id)
-    setDrag({ item, x: e.clientX, y: e.clientY, wasEquipped: isEquipped })
+    const { x, y } = clientToCanvas(e.clientX, e.clientY)
+    setDrag({ item, x, y, wasEquipped: isEquipped })
   }
 
   function startEquippedDrag(item: ClothingItem, e: React.PointerEvent) {
@@ -1170,17 +1218,19 @@ export default function App() {
     e.preventDefault()
     e.stopPropagation()
     setHoveredId(undefined)
-    setDrag({ item, x: e.clientX, y: e.clientY, wasEquipped: true })
+    const { x, y } = clientToCanvas(e.clientX, e.clientY)
+    setDrag({ item, x, y, wasEquipped: true })
   }
 
   function handleClosetAdjPointerDown(id: string, e: React.PointerEvent) {
     e.preventDefault()
     e.stopPropagation()
     const current = closetAdjustments[id] ?? { x: 0, y: 0, scale: 1 }
+    const { x, y } = clientToCanvas(e.clientX, e.clientY)
     closetAdjDragRef.current = {
       id,
-      startPointerX: e.clientX,
-      startPointerY: e.clientY,
+      startPointerX: x,
+      startPointerY: y,
       startAdjX: current.x,
       startAdjY: current.y,
     }
@@ -1206,10 +1256,11 @@ export default function App() {
     if (selectedSlot !== slot) return
     e.stopPropagation()
     e.preventDefault()
+    const { x, y } = clientToCanvas(e.clientX, e.clientY)
     debugDragRef.current = {
       slotId: slot,
-      startPointerX: e.clientX,
-      startPointerY: e.clientY,
+      startPointerX: x,
+      startPointerY: y,
       startAdjX: adjustments[slot].x,
       startAdjY: adjustments[slot].y,
     }
@@ -1256,9 +1307,11 @@ export default function App() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
+    <div className="game-viewport">
     <div
-      className="relative w-screen h-screen overflow-hidden"
-      style={{ cursor: drag ? 'grabbing' : 'default' }}
+      ref={canvasRef}
+      className="game-canvas"
+      style={{ transform: `scale(${scale})`, cursor: drag ? 'grabbing' : 'default' }}
     >
       {/* Background */}
       <img
@@ -1317,7 +1370,7 @@ export default function App() {
       {/* Debug toggle button — gear icon, no text */}
       <button
         onClick={toggleDebug}
-        className="fixed bottom-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-full shadow-lg"
+        className="absolute bottom-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-full shadow-lg"
         style={{
           background: 'rgba(0,0,0,0.6)',
           outline: debugMode ? '2px solid #facc15' : 'none',
@@ -1335,6 +1388,7 @@ export default function App() {
           ⚙
         </span>
       </button>
+    </div>
     </div>
   )
 }
