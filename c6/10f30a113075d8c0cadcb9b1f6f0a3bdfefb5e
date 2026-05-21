@@ -1,0 +1,31 @@
+vite.config.ts
+  s_c8728a075006ef::t_9f86c2eb2b874e 6
+package-lock.json
+  ai_agent 15,23,1495,1532-1541,1630
+src/App.tsx
+  s_c8728a075006ef::t_88ae4dad288546 3,6-9,12-21,24,27-34
+  s_c8728a075006ef::t_c39197909a35d0 1174
+  s_c8728a075006ef::t_de20759b107c7a 1115-1118
+  s_c8728a075006ef::t_52b3649a6c60b0 1242
+  s_c8728a075006ef::t_d95836f58f1021 1209
+.gitignore
+  s_c8728a075006ef::t_b5b19ca59ca83a 17-24
+package.json
+  s_c8728a075006ef::t_ce0639cb6f0c3d 12-13,19,24-25,27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.12",
+  "base_commit_sha": "c610f30a113075d8c0cadcb9b1f6f0a3bdfefb5e",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
