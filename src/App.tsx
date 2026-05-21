@@ -114,7 +114,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerShirt,
     closetThumbnail: closetShirt,
     closetHeight: 'calc(551px * 0.22)',
-    defaultAdjustment: { x: 16, y: 11, scale: 1.10, rotate: 0 },
+    defaultAdjustment: { x: 13, y: 6,  scale: 1.10, rotate: 0 },
   },
   // LEGS — hang on rod
   {
@@ -126,7 +126,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerJeans,
     closetThumbnail: closetJeans,
     closetHeight: 'calc(551px * 0.32)',
-    defaultAdjustment: { x: 6, y: 66, scale: 0.85, rotate: 0 },
+    defaultAdjustment: { x: 4, y: 55, scale: 0.85, rotate: 0 },
   },
   // BODY — full outfit, hangs on rod, overrides legs + torso
   {
@@ -138,7 +138,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerPyjamas,
     closetThumbnail: closetPyjamas,
     closetHeight: 'calc(551px * 0.30)',
-    defaultAdjustment: { x: 14, y: 9, scale: 1.00, rotate: 0 },
+    defaultAdjustment: { x: 12, y: 11, scale: 1.00, rotate: 0 },
   },
   // HEAD — hat (middle shelf)
   {
@@ -150,7 +150,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerHat,
     closetThumbnail: closetHat,
     closetHeight: 'calc(551px * 0.15)',
-    defaultAdjustment: { x: 48, y: -50, scale: 1.15, rotate: 0 },
+    defaultAdjustment: { x: 40, y: -42, scale: 1.15, rotate: 0 },
   },
   // NECK — scarf (middle shelf)
   {
@@ -162,7 +162,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerScarf,
     closetThumbnail: closetScarf,
     closetHeight: 'calc(551px * 0.15)',
-    defaultAdjustment: { x: -20, y: 27, scale: 1.15, rotate: 0 },
+    defaultAdjustment: { x: -16, y: 22, scale: 1.15, rotate: 0 },
   },
   // FEET — bottom boxes
   {
@@ -215,11 +215,11 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   feet:         { x: 2, y: 5, scale: 1.10, rotate: 0 },
   'feet-left':  { x: 5, y: 64, scale: 0.85, rotate: 0 },
   'feet-right': { x: -1, y: 64, scale: 0.85, rotate: 0 },
-  legs:         { x: 6, y: 66, scale: 0.85, rotate: 0 },
-  torso:        { x: 16, y: 11, scale: 1.10, rotate: 0 },
-  body:         { x: 14, y: 9, scale: 1.00, rotate: 0 },
-  neck:         { x: -20, y: 27, scale: 1.15, rotate: 0 },
-  head:         { x: 48, y: -50, scale: 1.15, rotate: 0 },
+  legs:         { x: 4,  y: 55,  scale: 0.85, rotate: 0 },
+  torso:        { x: 13, y: 6,   scale: 1.10, rotate: 0 },
+  body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
+  neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
+  head:         { x: 40, y: -42, scale: 1.15, rotate: 0 },
 }
 
 // ── Hanger SVG ─────────────────────────────────────────────────────────────────
