@@ -22,7 +22,6 @@ import layerScarf from './assets/layers/layer-scarf.png'
 
 // Thumbnail for socks closet display
 import thumbSocksCloset from './assets/thumbnails/thumb-socks-closet.png'
-import thumbPyjamasCloset from './assets/thumbnails/thumb-pyjamas-closet.png'
 
 // Tight-cropped closet thumbnails
 import closetShirt   from './assets/thumbnails/closet-shirt.png'
@@ -136,7 +135,7 @@ const ITEMS: ClothingItem[] = [
     label: 'fish pyjamas',
     slot: SLOT.BODY,
     layer: layerPyjamas,
-    thumbnail: thumbPyjamasCloset,
+    thumbnail: layerPyjamas,
     closetThumbnail: closetPyjamas,
     closetHeight: 'calc(68vh * 0.30)',
     defaultAdjustment: { x: 14, y: 9, scale: 1.00, rotate: 0 },
