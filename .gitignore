@@ -4,3 +4,13 @@ dist/
 *.local
 scripts/
 src/assets/outfits/
+public/assets/
+src/assets/pete/pete-con-*
+src/assets/pete/pete-sin-*
+src/assets/layers/layer-coat*.png
+src/assets/layers/layer-fish-trousers.png
+src/assets/layers/layer-trousers.png
+src/assets/layers/layer-*-sitting.png
+src/assets/thumbnails/thumb-coat.png
+src/assets/thumbnails/thumb-pyjama*.png
+src/assets/thumbnails/thumb-trainers.png
