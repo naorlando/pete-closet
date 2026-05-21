@@ -1309,27 +1309,6 @@ export default function App() {
 
   return (
     <div className="game-viewport">
-      <button
-        onClick={() => window.location.reload()}
-        title="Re-center"
-        style={{
-          position: 'fixed',
-          top: 8,
-          left: 8,
-          zIndex: 9999,
-          background: 'rgba(0,0,0,0.45)',
-          color: 'white',
-          border: '1px solid rgba(255,255,255,0.25)',
-          borderRadius: 6,
-          padding: '4px 7px',
-          fontSize: 15,
-          lineHeight: 1,
-          cursor: 'pointer',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        ⊡
-      </button>
     <div
       ref={canvasRef}
       className="game-canvas"
