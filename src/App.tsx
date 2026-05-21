@@ -771,6 +771,9 @@ function DebugPanel({
   onSelectSlot,
   onAdjustClosetItem,
 }: DebugPanelProps) {
+  const [layersOpen, setLayersOpen] = useState(true)
+  const [closetOpen, setClosetOpen] = useState(false)
+
   const equippedFeetItem = equipped.feet ? ITEMS.find(i => i.id === equipped.feet) : null
   const feetIsSplit = equippedFeetItem?.isSplit ?? false
 
@@ -784,8 +787,8 @@ function DebugPanel({
   if (equippedKeys.length === 0) {
     return (
       <div
-        className="absolute bottom-16 left-4 z-50 rounded-lg p-2 text-xs text-white/60"
-        style={{ background: 'rgba(0,0,0,0.75)', minWidth: 180 }}
+        className="absolute left-4 z-50 rounded-lg p-2 text-xs text-white/60"
+        style={{ background: 'rgba(0,0,0,0.75)', minWidth: 180, bottom: 60, maxHeight: '70%', overflowY: 'auto' }}
       >
         No layers equipped
       </div>
@@ -794,13 +797,25 @@ function DebugPanel({
 
   return (
     <div
-      className="absolute bottom-16 left-4 z-50 rounded-lg p-2 font-mono text-xs"
-      style={{ background: 'rgba(0,0,0,0.82)', minWidth: 240 }}
+      className="absolute left-4 z-50 rounded-lg p-2 font-mono text-xs"
+      style={{ background: 'rgba(0,0,0,0.82)', minWidth: 240, bottom: 60, maxHeight: '70%', overflowY: 'auto' }}
     >
       <p className="text-yellow-400 font-bold mb-1 text-[10px] uppercase tracking-widest">
         Layer Debugger
       </p>
 
+      {/* LAYERS section header */}
+      <div
+        onClick={() => setLayersOpen(o => !o)}
+        style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
+        className="text-white/70 font-bold text-[10px] uppercase tracking-widest mb-1"
+      >
+        <span>{layersOpen ? '▼' : '▶'}</span>
+        <span>LAYERS</span>
+      </div>
+
+      {layersOpen && (
+        <>
       {/* Column headers */}
       <div className="grid gap-x-2 text-white/40 mb-1" style={{ gridTemplateColumns: '68px 36px 36px 44px 44px 60px' }}>
         <span>SLOT</span>
@@ -911,14 +926,24 @@ function DebugPanel({
           </div>
         )
       })}
+        </>
+      )}
 
       {/* ── CLOSET section ──────────────────────────────────────────────────── */}
-      <p className="text-yellow-400 font-bold mt-2 mb-1 text-[10px] uppercase tracking-widest border-t border-white/10 pt-2">
-        Closet
-      </p>
+      {/* CLOSET section header */}
+      <div
+        onClick={() => setClosetOpen(o => !o)}
+        style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}
+        className="text-white/70 font-bold text-[10px] uppercase tracking-widest border-t border-white/10 pt-2"
+      >
+        <span>{closetOpen ? '▼' : '▶'}</span>
+        <span>CLOSET</span>
+      </div>
 
+      {closetOpen && (
+        <>
       {/* Column headers */}
-      <div className="grid gap-x-2 text-white/40 mb-1" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
+      <div className="grid gap-x-2 text-white/40 mb-1 mt-1" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
         <span>ID</span>
         <span className="text-right">X</span>
         <span className="text-right">Y</span>
@@ -982,6 +1007,8 @@ function DebugPanel({
           </div>
         )
       })}
+        </>
+      )}
     </div>
   )
 }
