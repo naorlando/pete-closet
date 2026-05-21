@@ -991,16 +991,20 @@ function DebugPanel({
 const GAME_W = 1440
 const GAME_H = 810
 
-function useGameScale() {
-  const [scale, setScale] = useState(() =>
-    Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H)
-  )
+function useGameScale(mode: 'fit' | 'fill') {
+  const [scale, setScale] = useState(() => {
+    const fn = mode === 'fill' ? Math.max : Math.min
+    return fn(window.innerWidth / GAME_W, window.innerHeight / GAME_H)
+  })
   useEffect(() => {
-    const update = () =>
-      setScale(Math.min(window.innerWidth / GAME_W, window.innerHeight / GAME_H))
+    const update = () => {
+      const fn = mode === 'fill' ? Math.max : Math.min
+      setScale(fn(window.innerWidth / GAME_W, window.innerHeight / GAME_H))
+    }
+    update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
-  }, [])
+  }, [mode])
   return scale
 }
 
@@ -1017,7 +1021,8 @@ const EMPTY_EQUIPPED: Record<SlotId, string | null> = {
 }
 
 export default function App() {
-  const scale    = useGameScale()
+  const [scaleMode, setScaleMode] = useState<'fit' | 'fill'>('fill')
+  const scale    = useGameScale(scaleMode)
   const scaleRef = useRef(scale)
   scaleRef.current = scale
 
@@ -1308,6 +1313,25 @@ export default function App() {
 
   return (
     <div className="game-viewport">
+      <button
+        onClick={() => setScaleMode(m => m === 'fit' ? 'fill' : 'fit')}
+        style={{
+          position: 'fixed',
+          top: 8,
+          left: 8,
+          zIndex: 9999,
+          background: 'rgba(0,0,0,0.5)',
+          color: 'white',
+          border: '1px solid rgba(255,255,255,0.3)',
+          borderRadius: 6,
+          padding: '4px 8px',
+          fontSize: 12,
+          cursor: 'pointer',
+          backdropFilter: 'blur(4px)',
+        }}
+      >
+        {scaleMode === 'fit' ? '⛶ fill' : '⊡ fit'}
+      </button>
     <div
       ref={canvasRef}
       className="game-canvas"
