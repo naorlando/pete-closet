@@ -2,6 +2,21 @@ import { useState, useEffect, useRef } from 'react'
 
 import roomBg from './assets/room-background.webp'
 
+// New background + windows
+import windowSummer from './assets/window-summer.webp'
+import windowAutumn from './assets/window-autumn.webp'
+import windowNight from './assets/window-night.webp'
+
+// New clothing layers
+import layerShorts from './assets/layers/layer-shorts.webp'
+import layerCap from './assets/layers/layer-cap.webp'
+import layerCoatWinter from './assets/layers/layer-coat-winter.webp'
+
+// New closet thumbnails
+import closetShorts from './assets/thumbnails/closet-shorts.webp'
+import closetCap from './assets/thumbnails/closet-cap.webp'
+import closetCoatWinter from './assets/thumbnails/closet-coat-winter.webp'
+
 // Base Pete — always visible, never changes
 import peteBase from './assets/pete/pete-base.webp'
 import peteNoArms from './assets/pete/pete-no-arms.webp'
@@ -201,6 +216,42 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
     defaultAdjustment: { x: 2, y: 20, scale: 1.10, rotate: 0 },
+  },
+  // Shorts — legs slot
+  {
+    id: 'shorts',
+    word: 'SHORTS',
+    label: 'swim shorts',
+    slot: SLOT.LEGS,
+    layer: layerShorts,
+    thumbnail: layerShorts,
+    closetThumbnail: closetShorts,
+    closetHeight: 'calc(551px * 0.22)',
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+  },
+  // Baseball cap — head slot
+  {
+    id: 'cap',
+    word: 'CAP',
+    label: 'a baseball cap',
+    slot: SLOT.HEAD,
+    layer: layerCap,
+    thumbnail: layerCap,
+    closetThumbnail: closetCap,
+    closetHeight: 'calc(551px * 0.15)',
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+  },
+  // Winter coat — torso slot
+  {
+    id: 'coat-winter',
+    word: 'COAT',
+    label: 'a winter coat',
+    slot: SLOT.TORSO,
+    layer: layerCoatWinter,
+    thumbnail: layerCoatWinter,
+    closetThumbnail: closetCoatWinter,
+    closetHeight: 'calc(551px * 0.30)',
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
   },
 ]
 
@@ -835,6 +886,25 @@ function DebugPanel({
         Layer Debugger
       </p>
 
+      {/* Export button */}
+      <button
+        onClick={() => {
+          const data = {
+            layers: adjustments,
+            closet: closetAdjustments,
+          }
+          navigator.clipboard.writeText(JSON.stringify(data, null, 2))
+            .then(() => alert('Copied to clipboard!'))
+        }}
+        style={{
+          width: '100%', marginBottom: 8, padding: '4px 8px',
+          background: 'rgba(250,204,21,0.2)', border: '1px solid rgba(250,204,21,0.4)',
+          borderRadius: 4, color: '#facc15', fontSize: 10, cursor: 'pointer',
+        }}
+      >
+        📋 Export values
+      </button>
+
       {/* LAYERS section header */}
       <div
         onClick={() => setLayersOpen(o => !o)}
@@ -1044,6 +1114,16 @@ function DebugPanel({
   )
 }
 
+// ── Season ─────────────────────────────────────────────────────────────────────
+
+type Season = 'summer' | 'autumn' | 'night'
+
+const WINDOW_SRC: Record<Season, string> = {
+  summer: windowSummer,
+  autumn: windowAutumn,
+  night:  windowNight,
+}
+
 // ── Game scale hook ────────────────────────────────────────────────────────────
 
 const GAME_W = 1440
@@ -1086,6 +1166,7 @@ export default function App() {
   const [drag, setDrag]               = useState<DragState | null>(null)
   const [lastWord, setLastWord]       = useState<VocabWord | null>(null)
   const [hoveredId, setHoveredId]     = useState<string | undefined>(undefined)
+  const [season, setSeason]           = useState<Season>('summer')
 
   // ── Debug state ─────────────────────────────────────────────────────────────
   const [debugMode, setDebugMode]       = useState(false)
@@ -1105,6 +1186,9 @@ export default function App() {
     'trainers':     { x: 44,   y: -7,   scale: 0.65 },
     'socks':        { x: -336, y: 148,  scale: 1.65 },
     'cowboy-boots': { x: 4,    y: -4,   scale: 1.15 },
+    'shorts':       { x: 0,    y: 0,    scale: 1    },
+    'cap':          { x: 0,    y: 0,    scale: 1    },
+    'coat-winter':  { x: 0,    y: 0,    scale: 1    },
   })
 
   const peteRef = useRef<HTMLDivElement>(null)
@@ -1114,7 +1198,9 @@ export default function App() {
   useEffect(() => {
     const srcs = [peteBase, peteNoArms, peteNoFeet, peteNoArmsNoFeet, roomBg,
       layerShirt, layerJeans, layerPyjamas, layerHat, layerScarf,
-      layerTrainers, layerCowboyBoots, layerSocks, layerSocksLeft, layerSocksRight]
+      layerTrainers, layerCowboyBoots, layerSocks, layerSocksLeft, layerSocksRight,
+      windowSummer, windowAutumn, windowNight,
+      layerShorts, layerCap, layerCoatWinter]
     srcs.forEach(src => { const img = new window.Image(); img.src = src })
   }, []);
 
@@ -1382,12 +1468,37 @@ export default function App() {
       style={{ transform: `scale(${scale})`, cursor: drag ? 'grabbing' : 'default' }}
     >
       {/* Background */}
+      {/* Room base */}
       <img
         src={roomBg}
         alt="Pete's room"
         className="absolute inset-0 w-full h-full object-cover select-none"
         draggable={false}
       />
+      {/* Seasonal window overlay — same canvas size, same object-fit */}
+      <img
+        src={WINDOW_SRC[season]}
+        alt=""
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none select-none"
+        draggable={false}
+      />
+
+      {/* Season selector */}
+      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 6 }}>
+        {(['summer', 'autumn', 'night'] as Season[]).map(s => (
+          <button
+            key={s}
+            onClick={() => setSeason(s)}
+            style={{
+              background: season === s ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.4)',
+              border: 'none', borderRadius: 20, padding: '4px 10px',
+              fontSize: 18, cursor: 'pointer', lineHeight: 1,
+            }}
+          >
+            {s === 'summer' ? '☀️' : s === 'autumn' ? '🍂' : '🌙'}
+          </button>
+        ))}
+      </div>
 
       {/* Closet: 3 zones — rod, middle shelf, bottom boxes */}
       <Closet
