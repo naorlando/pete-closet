@@ -1,0 +1,19 @@
+.gitignore
+  s_c8728a075006ef::t_eb86d96ac638c2 17-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "b8d17b213502c340542c2bbc9503e630a4adcd68",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
