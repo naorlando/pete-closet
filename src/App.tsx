@@ -217,7 +217,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetBoots,
     closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
-    defaultAdjustment: { x: 2, y: 20, scale: 1.10, rotate: 0 },
+    defaultAdjustment: { x: 2, y: 5, scale: 1.10, rotate: 0 },
   },
   // Shorts — legs slot
   {
@@ -229,7 +229,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerShorts,
     closetThumbnail: closetShorts,
     closetHeight: 'calc(551px * 0.22)',
-    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+    defaultAdjustment: { x: 4, y: 55, scale: 0.85, rotate: 0 },
   },
   // Baseball cap — head slot
   {
@@ -241,7 +241,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerCap,
     closetThumbnail: closetCap,
     closetHeight: 'calc(551px * 0.15)',
-    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+    defaultAdjustment: { x: 40, y: -42, scale: 1.15, rotate: 0 },
   },
   // Winter coat — torso slot
   {
@@ -253,7 +253,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerCoatWinter,
     closetThumbnail: closetCoatWinter,
     closetHeight: 'calc(551px * 0.30)',
-    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+    defaultAdjustment: { x: 13, y: 6, scale: 1.10, rotate: 0 },
   },
 ]
 
@@ -562,6 +562,9 @@ interface PeteProps {
   onSelectSlot: (slot: AdjustmentKey) => void
   onDebugPointerDown: (slot: AdjustmentKey, e: React.PointerEvent) => void
   onEquippedPointerDown: (item: ClothingItem, e: React.PointerEvent) => void
+  onPetePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
+  onPetePointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void
+  onPetePointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void
 }
 
 function Pete({
@@ -575,6 +578,9 @@ function Pete({
   onSelectSlot,
   onDebugPointerDown,
   onEquippedPointerDown,
+  onPetePointerDown,
+  onPetePointerMove,
+  onPetePointerUp,
 }: PeteProps) {
   // body slot active → override legs + torso (pyjamas mode)
   const equippedBody  = equipped.body  ? ITEMS.find(i => i.id === equipped.body)  : null
@@ -652,6 +658,9 @@ function Pete({
         transform: `translateX(calc(-50% + ${peteOffset.x}px)) translateY(${peteOffset.y}px)`,
         cursor: peteDebugActive ? 'move' : undefined,
       }}
+      onPointerDown={peteDebugActive ? onPetePointerDown : undefined}
+      onPointerMove={peteDebugActive ? onPetePointerMove : undefined}
+      onPointerUp={peteDebugActive ? onPetePointerUp : undefined}
     >
       <div className="relative" style={{ height: '551px', width: 'auto' }}>
 
@@ -1244,20 +1253,21 @@ export default function App() {
   const debugDragRef                    = useRef<DebugDragState | null>(null)
 
   const closetAdjDragRef = useRef<ClosetAdjDragState | null>(null)
+  const peteDragRef = useRef<{ startX: number; startY: number; startPeteX: number; startPeteY: number } | null>(null)
 
   // Closet item per-item adjustments (position + scale, debug only)
   const [closetAdjustments, setClosetAdjustments] = useState<Record<string, ClosetItemAdjustment>>({
-    'shirt':        { x: -29,  y: -135, scale: 1.40 },
-    'jeans':        { x: -19,  y: -126, scale: 0.80 },
-    'pyjamas':      { x: 21,   y: -147, scale: 1.25 },
+    'shirt':        { x: -34,  y: -97,  scale: 1.40 },
+    'jeans':        { x: -31,  y: -90,  scale: 0.85 },
+    'pyjamas':      { x: 69,   y: -106, scale: 1.25 },
     'hat':          { x: -1,   y: 23,   scale: 1.00 },
-    'scarf':        { x: -84,  y: 94,   scale: 1.00 },
-    'trainers':     { x: 44,   y: -7,   scale: 0.65 },
+    'scarf':        { x: -33,  y: 72,   scale: 1.00 },
+    'trainers':     { x: 17,   y: 12,   scale: 0.65 },
     'socks':        { x: -336, y: 148,  scale: 1.65 },
-    'cowboy-boots': { x: 4,    y: -4,   scale: 1.15 },
-    'shorts':       { x: 0,    y: 0,    scale: 1    },
-    'cap':          { x: 0,    y: 0,    scale: 1    },
-    'coat-winter':  { x: 0,    y: 0,    scale: 1    },
+    'cowboy-boots': { x: -34,  y: 14,   scale: 1.15 },
+    'shorts':       { x: -89,  y: -79,  scale: 0.65 },
+    'cap':          { x: 51,   y: 67,   scale: 1.00 },
+    'coat-winter':  { x: 17,   y: -96,  scale: 1.00 },
   })
 
   const peteRef = useRef<HTMLDivElement>(null)
@@ -1539,6 +1549,38 @@ export default function App() {
     setPeteOffset({ x: 0, y: 0 })
   }
 
+  // ── Debug: Pete container drag handlers ─────────────────────────────────────
+
+  function handlePetePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    const canvasRect = canvasRef.current?.getBoundingClientRect()
+    if (!canvasRect) return
+    const s = scaleRef.current
+    peteDragRef.current = {
+      startX: (e.clientX - canvasRect.left) / s,
+      startY: (e.clientY - canvasRect.top) / s,
+      startPeteX: peteOffset.x,
+      startPeteY: peteOffset.y,
+    }
+  }
+
+  function handlePetePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!peteDragRef.current) return
+    const canvasRect = canvasRef.current?.getBoundingClientRect()
+    if (!canvasRect) return
+    const s = scaleRef.current
+    const cx = (e.clientX - canvasRect.left) / s
+    const cy = (e.clientY - canvasRect.top) / s
+    setPeteOffset({
+      x: peteDragRef.current.startPeteX + (cx - peteDragRef.current.startX),
+      y: peteDragRef.current.startPeteY + (cy - peteDragRef.current.startY),
+    })
+  }
+
+  function handlePetePointerUp() {
+    peteDragRef.current = null
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -1607,6 +1649,9 @@ export default function App() {
         onSelectSlot={handleSelectSlot}
         onDebugPointerDown={handleDebugPointerDown}
         onEquippedPointerDown={startEquippedDrag}
+        onPetePointerDown={handlePetePointerDown}
+        onPetePointerMove={handlePetePointerMove}
+        onPetePointerUp={handlePetePointerUp}
       />
 
       {/* Ghost drag item */}
