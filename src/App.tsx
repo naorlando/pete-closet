@@ -1479,6 +1479,7 @@ export default function App() {
   const [colorizedImages, setColorizedImages] = useState<Record<string, string>>({})
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [colorTarget, setColorTarget] = useState<string | null>(null)
+  const [paletteHovered, setPaletteHovered] = useState(false)
 
   // ── Preload Pete variant images on mount ────────────────────────────────────
 
@@ -1962,14 +1963,17 @@ export default function App() {
                 if (firstColorizable) setColorTarget(firstColorizable)
               }
             }}
+            onMouseEnter={() => setPaletteHovered(true)}
+            onMouseLeave={() => setPaletteHovered(false)}
             style={{
-              position: 'absolute', left: 20, top: '42%',
-              width: 56, height: 56, borderRadius: '50%',
+              position: 'absolute', bottom: 120, left: 16,
+              width: 68, height: 68, borderRadius: '50%',
               background: 'none', border: 'none', cursor: hasColorizable ? 'pointer' : 'default',
               padding: 0, zIndex: 15,
               opacity: hasColorizable ? 1 : 0,
               pointerEvents: hasColorizable ? 'auto' : 'none',
-              outline: paletteOpen ? '3px solid white' : 'none',
+              outline: (paletteOpen || paletteHovered) ? '3px solid white' : 'none',
+              outlineOffset: 2,
               filter: paletteOpen
                 ? 'drop-shadow(0 0 8px rgba(255,200,0,0.9))'
                 : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
@@ -1977,7 +1981,7 @@ export default function App() {
             }}
             title="Change color"
           >
-            <img src={paletteIcon} style={{ width: 56, height: 56, objectFit: 'contain' }} alt="palette" />
+            <img src={paletteIcon} style={{ width: 68, height: 68, objectFit: 'contain' }} alt="palette" />
           </button>
         )
       })()}
@@ -1985,15 +1989,19 @@ export default function App() {
       {/* Color picker panel */}
       {paletteOpen && (
         <div style={{
-          position: 'absolute', left: 84, top: '35%',
-          background: 'rgba(10,10,20,0.88)',
+          position: 'absolute',
+          left: 16,
+          bottom: 200,
+          background: 'rgba(10,10,20,0.90)',
           backdropFilter: 'blur(8px)',
-          borderRadius: 16, padding: 12,
+          borderRadius: 14,
+          padding: 10,
           border: '1px solid rgba(255,255,255,0.15)',
-          zIndex: 16, display: 'flex', flexDirection: 'column', gap: 8,
+          zIndex: 16,
+          width: 195,
         }}>
-          {/* Item selector tabs */}
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {/* Item selector — scrollable row */}
+          <div style={{ display: 'flex', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
             {Object.values(equipped)
               .filter((id): id is string => !!id && !!ITEMS.find(i => i.id === id)?.colorizable)
               .map(id => {
@@ -2015,30 +2023,29 @@ export default function App() {
                 )
               })}
           </div>
-          {/* Color swatches */}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Reset to original */}
+
+          {/* Color grid: 4 columns */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 7 }}>
+            {/* Reset button first */}
             <button
               onClick={() => {
                 if (colorTarget) setItemColors(prev => ({ ...prev, [colorTarget]: null }))
               }}
               title="Original"
               style={{
-                width: 36, height: 36, borderRadius: '50%',
+                width: 38, height: 38, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.15)',
                 border: colorTarget && (itemColors[colorTarget] === null || itemColors[colorTarget] === undefined)
                   ? '3px solid white'
                   : '2px solid rgba(255,255,255,0.4)',
-                cursor: 'pointer', fontSize: 16,
+                cursor: 'pointer', fontSize: 18,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transform: colorTarget && (itemColors[colorTarget] === null || itemColors[colorTarget] === undefined)
-                  ? 'scale(1.2)'
-                  : 'scale(1)',
-                transition: 'transform 0.15s',
               }}
             >
               ↩
             </button>
+
+            {/* 8 color swatches */}
             {COLOR_SWATCHES.map(({ hue, hex, label }) => {
               const isActive = colorTarget ? itemColors[colorTarget] === hue : false
               return (
@@ -2049,11 +2056,11 @@ export default function App() {
                   }}
                   title={label}
                   style={{
-                    width: 36, height: 36, borderRadius: '50%',
+                    width: 38, height: 38, borderRadius: '50%',
                     background: hex,
                     border: isActive ? '3px solid white' : '2px solid rgba(0,0,0,0.3)',
                     cursor: 'pointer',
-                    transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                    transform: isActive ? 'scale(1.15)' : 'scale(1)',
                     transition: 'transform 0.15s',
                     boxShadow: isActive ? `0 0 10px ${hex}` : 'none',
                   }}
