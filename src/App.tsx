@@ -348,9 +348,13 @@ function Closet({
 
   // ── Top rod: hanging clothes ──────────────────────────────────────────────
 
-  const hangingItems = HANGING_ITEMS.map((item, i) => {
+  const visibleHanging = HANGING_ITEMS.filter(i => !equippedIds.has(i.id))
+  const visibleMiddle  = MIDDLE_SHELF_ITEMS.filter(i => !equippedIds.has(i.id))
+  const visibleBottom  = BOTTOM_BOX_ITEMS.filter(i => !equippedIds.has(i.id))
+
+  const hangingItems = visibleHanging.map((item, i) => {
     const isDragging = draggingId === item.id
-    const xPct = CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (i + 0.5)) / HANGING_ITEMS.length
+    const xPct = CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (i + 0.5)) / visibleHanging.length
     const cadj = closetAdjustments[item.id] ?? { x: 0, y: 0, scale: 1 }
 
     return (
@@ -414,9 +418,9 @@ function Closet({
 
   // ── Middle shelf: hat + scarf ─────────────────────────────────────────────
 
-  const middleItems = MIDDLE_SHELF_ITEMS.map((item, i) => {
+  const middleItems = visibleMiddle.map((item, i) => {
     const isDragging = draggingId === item.id
-    const xPct = CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (i + 0.5)) / MIDDLE_SHELF_ITEMS.length
+    const xPct = CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (i + 0.5)) / visibleMiddle.length
     const cadj = closetAdjustments[item.id] ?? { x: 0, y: 0, scale: 1 }
 
     return (
@@ -473,12 +477,13 @@ function Closet({
 
   // ── Bottom boxes: trainers (left), socks (center), boots (right) ──────────
 
-  // Fixed positions for the 3 boxes
+  // Fixed positions for the 3 boxes — indexed by original BOTTOM_BOX_ITEMS order
   const BOX_POSITIONS = [0.700, 0.790, 0.885]
 
-  const bottomItems = BOTTOM_BOX_ITEMS.map((item, i) => {
+  const bottomItems = visibleBottom.map((item) => {
     const isDragging = draggingId === item.id
-    const xPct = BOX_POSITIONS[i] ?? CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (i + 0.5)) / BOTTOM_BOX_ITEMS.length
+    const originalIndex = BOTTOM_BOX_ITEMS.indexOf(item)
+    const xPct = BOX_POSITIONS[originalIndex] ?? CLOSET_LEFT + ((CLOSET_RIGHT - CLOSET_LEFT) * (originalIndex + 0.5)) / BOTTOM_BOX_ITEMS.length
     const cadj = closetAdjustments[item.id] ?? { x: 0, y: 0, scale: 1 }
 
     return (
@@ -818,18 +823,19 @@ function GhostDrag({ drag }: GhostDragProps) {
       style={{
         left: drag.x,
         top: drag.y,
-        transform: 'translate(-50%, -50%) scale(1.1)',
       }}
     >
       <img
-        src={drag.item.thumbnail}
+        src={drag.item.closetThumbnail ?? drag.item.thumbnail}
         alt={drag.item.word}
-        className="w-28 h-28 object-contain drop-shadow-2xl ring-4 ring-yellow-400 rounded-xl"
+        className="drag-wave object-contain"
+        style={{
+          height: drag.item.closetHeight ?? 'calc(551px * 0.30)',
+          width: 'auto',
+          filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))',
+        }}
         draggable={false}
       />
-      <span className="mt-1 text-sm font-black text-white uppercase tracking-wide bg-black/60 rounded-full px-3 py-1">
-        {drag.item.word}
-      </span>
     </div>
   )
 }
@@ -1270,33 +1276,35 @@ const SEASON_COLORS: Record<Season, string> = {
   night:  '#7AAAFF',
 }
 
-// ─── Donut wheel ──────────────────────────────────────────────
-const SEASONS_ORDER: Season[] = ['summer', 'autumn', 'night']
-// Sectors: each 120°. Start at top (-30° offset so summer is at top)
-// summer: -30°→90°, autumn: 90°→210°, night: 210°→330°
+// ─── Half-donut wheel ─────────────────────────────────────────
+// Half-donut: spans from -90° (left) to 90° (right) passing through 0° (top)
+// 3 sectors × 60° each
 const SECTOR_RANGES: Record<Season, [number, number]> = {
-  summer: [-30, 90],
-  autumn: [90, 210],
-  night:  [210, 330],
+  autumn: [-90, -30],   // left sector
+  summer: [-30,  30],   // center sector (top)
+  night:  [ 30,  90],   // right sector
 }
+// Icons at sector midpoints: autumn=-60°, summer=0°, night=60°
 
 function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Season) => void }) {
-  const SIZE = 120
-  const cx = SIZE / 2
-  const cy = SIZE / 2
-  const R_OUTER = 52    // outer donut radius
-  const R_INNER = 26    // inner hole radius
-  const ICON_R = 42     // icon placement radius (midpoint of arc)
+  const R = 52       // outer radius
+  const r = 26       // inner hole radius
+  const ICON_R = 40  // icon placement radius
+  const PAD = 6
+  const W = (R + PAD) * 2       // full circle width
+  const H = R + r + PAD + 4     // only top half needed + center hole
+
+  // Center of the FULL circle — at the bottom center of the SVG
+  const cx = W / 2
+  const cy = H  // center is at the bottom of the SVG
 
   return (
     <div style={{
       position: 'absolute', bottom: 16, left: 16, zIndex: 20,
-      filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+      filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))',
     }}>
-      <svg width={SIZE} height={SIZE} style={{ overflow: 'visible' }}>
-        {/* Draw each sector */}
-        {SEASONS_ORDER.map(s => {
-          const [start, end] = SECTOR_RANGES[s]
+      <svg width={W} height={H} style={{ overflow: 'visible' }}>
+        {(Object.entries(SECTOR_RANGES) as [Season, [number,number]][]).map(([s, [start, end]]) => {
           const mid = (start + end) / 2
           const active = season === s
           const color = SEASON_COLORS[s]
@@ -1304,16 +1312,14 @@ function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Seaso
 
           return (
             <g key={s} onClick={() => onSelect(s)} style={{ cursor: 'pointer' }}>
-              {/* Sector fill */}
               <path
-                d={sectorPath(cx, cy, R_OUTER, R_INNER, start, end)}
-                fill={active ? color : 'rgba(30,30,30,0.7)'}
-                stroke={active ? 'white' : 'rgba(255,255,255,0.2)'}
-                strokeWidth={active ? 2.5 : 1}
+                d={sectorPath(cx, cy, R, r, start, end)}
+                fill={active ? color : 'rgba(20,20,30,0.75)'}
+                stroke={active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.15)'}
+                strokeWidth={active ? 2 : 1}
                 strokeLinejoin="round"
-                style={{ transition: 'fill 0.2s, stroke 0.2s' }}
+                style={{ transition: 'fill 0.2s' }}
               />
-              {/* Icon — using foreignObject for React component */}
               <foreignObject
                 x={iconPos.x - 12} y={iconPos.y - 12}
                 width={24} height={24}
@@ -1322,25 +1328,30 @@ function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Seaso
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 24, height: 24,
-                  opacity: active ? 1 : 0.55,
-                  transform: active ? 'scale(1.15)' : 'scale(1)',
-                  transition: 'opacity 0.2s, transform 0.2s',
+                  opacity: active ? 1 : 0.5,
+                  transform: active ? 'scale(1.2)' : 'scale(1)',
+                  transition: 'all 0.2s',
                 }}>
-                  {s === 'summer' ? <SunIcon size={20}/> : s === 'autumn' ? <LeafIcon size={20}/> : <MoonIcon size={20}/>}
+                  {s === 'summer' ? <SunIcon size={20}/>
+                    : s === 'autumn' ? <LeafIcon size={20}/>
+                    : <MoonIcon size={20}/>}
                 </div>
               </foreignObject>
             </g>
           )
         })}
 
-        {/* Center hole — shows active season icon */}
-        <circle cx={cx} cy={cy} r={R_INNER - 1}
-          fill="rgba(10,10,20,0.75)"
-          stroke="rgba(255,255,255,0.15)" strokeWidth="1"
+        {/* Center dot at the base */}
+        <circle cx={cx} cy={cy} r={r - 1}
+          fill="rgba(10,10,20,0.8)"
+          stroke="rgba(255,255,255,0.12)" strokeWidth="1"
         />
-        <foreignObject x={cx-11} y={cy-11} width={22} height={22} style={{ pointerEvents: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22 }}>
-            {season === 'summer' ? <SunIcon size={18}/> : season === 'autumn' ? <LeafIcon size={18}/> : <MoonIcon size={18}/>}
+        {/* Active icon in center */}
+        <foreignObject x={cx-10} y={cy-r+4} width={20} height={20} style={{ pointerEvents: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20 }}>
+            {season === 'summer' ? <SunIcon size={16}/>
+              : season === 'autumn' ? <LeafIcon size={16}/>
+              : <MoonIcon size={16}/>}
           </div>
         </foreignObject>
       </svg>
