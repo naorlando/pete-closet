@@ -7,6 +7,9 @@ import windowSummer from './assets/window-summer.webp'
 import windowAutumn from './assets/window-autumn.webp'
 import windowNight from './assets/window-night.webp'
 
+// Season wheel icons
+import leafAutumnIcon from './assets/icons/icon-leaf-autumn.webp'
+
 // New clothing layers
 import layerShorts from './assets/layers/layer-shorts.webp'
 import layerCap from './assets/layers/layer-cap.webp'
@@ -1194,112 +1197,150 @@ function DebugPanel({
 
 type Season = 'summer' | 'autumn' | 'night'
 
-// ── Season Wheel ───────────────────────────────────────────────────────────────
+// ─── SVG helpers ──────────────────────────────────────────────
+function polarToXY(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+}
 
+function sectorPath(cx: number, cy: number, R: number, r: number, startDeg: number, endDeg: number) {
+  const o1 = polarToXY(cx, cy, R, startDeg)
+  const o2 = polarToXY(cx, cy, R, endDeg)
+  const i1 = polarToXY(cx, cy, r, endDeg)
+  const i2 = polarToXY(cx, cy, r, startDeg)
+  const large = endDeg - startDeg > 180 ? 1 : 0
+  return `M ${o1.x} ${o1.y} A ${R} ${R} 0 ${large} 1 ${o2.x} ${o2.y} L ${i1.x} ${i1.y} A ${r} ${r} 0 ${large} 0 ${i2.x} ${i2.y} Z`
+}
+
+// ─── Draw-style icons ─────────────────────────────────────────
+
+// Sun — cartoon hand-drawn style with chunky rays
 function SunIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="5" fill="#FFD700" />
-      {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
-        <line
-          key={deg}
-          x1={12 + 8 * Math.cos((deg * Math.PI) / 180)}
-          y1={12 + 8 * Math.sin((deg * Math.PI) / 180)}
-          x2={12 + 11 * Math.cos((deg * Math.PI) / 180)}
-          y2={12 + 11 * Math.sin((deg * Math.PI) / 180)}
-          stroke="#FFD700"
-          strokeWidth="2"
-          strokeLinecap="round"
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      {/* Glow circle behind */}
+      <circle cx="16" cy="16" r="10" fill="#FFE566" opacity="0.4"/>
+      {/* Main sun body */}
+      <circle cx="16" cy="16" r="7" fill="#FFD700" stroke="#E8900A" strokeWidth="1.8"/>
+      {/* Chunky irregular rays */}
+      {[0,40,80,120,160,200,240,280,320].map((deg, i) => {
+        const r1 = 9.5 + (i%3)*0.5
+        const r2 = 13 + (i%2)*0.8
+        const rad = (deg - 90) * Math.PI / 180
+        return <line key={deg}
+          x1={16 + r1*Math.cos(rad)} y1={16 + r1*Math.sin(rad)}
+          x2={16 + r2*Math.cos(rad)} y2={16 + r2*Math.sin(rad)}
+          stroke="#E8900A" strokeWidth={1.8 + (i%2)*0.6} strokeLinecap="round"
         />
-      ))}
+      })}
+      {/* Face dots */}
+      <circle cx="14" cy="16" r="1.2" fill="#E8900A"/>
+      <circle cx="18" cy="16" r="1.2" fill="#E8900A"/>
     </svg>
   )
 }
 
-function LeafIcon({ size = 22 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      {/* Maple leaf shape */}
-      <path d="M12 2 L13.5 6 L17 5 L15 8.5 L19 9 L16 11 L18 14.5 L14.5 13 L14 17 L12 15 L10 17 L9.5 13 L6 14.5 L8 11 L5 9 L9 8.5 L7 5 L10.5 6 Z"
-        fill="#D2580A" />
-      {/* Stem */}
-      <line x1="12" y1="17" x2="12" y2="22" stroke="#8B4513" strokeWidth="1.8" strokeLinecap="round"/>
-      {/* Vein highlights */}
-      <line x1="12" y1="15" x2="8" y2="11" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
-      <line x1="12" y1="15" x2="16" y2="11" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
-      <line x1="12" y1="10" x2="12" y2="3" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
-    </svg>
-  )
-}
-
+// Moon — crescent with draw-style texture
 function MoonIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8D8FF" />
-      <circle cx="16" cy="8" r="1" fill="white" opacity={0.6} />
-      <circle cx="14" cy="14" r="0.7" fill="white" opacity={0.5} />
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      {/* Stars */}
+      <circle cx="24" cy="8" r="1.5" fill="#E8E8FF" opacity="0.9"/>
+      <circle cx="26" cy="15" r="1" fill="#E8E8FF" opacity="0.7"/>
+      <circle cx="20" cy="6" r="1" fill="#E8E8FF" opacity="0.6"/>
+      {/* Moon crescent */}
+      <path d="M 20 6 A 10 10 0 1 0 20 26 A 7 7 0 1 1 20 6 Z"
+        fill="#D4E8FF" stroke="#8899CC" strokeWidth="1.5"/>
+      {/* Texture marks */}
+      <circle cx="13" cy="14" r="2" fill="none" stroke="#8899CC" strokeWidth="1" opacity="0.4"/>
+      <circle cx="16" cy="20" r="1.5" fill="none" stroke="#8899CC" strokeWidth="0.8" opacity="0.3"/>
     </svg>
   )
 }
 
-const SEASON_COLORS: Record<Season, string> = {
-  summer: '#FFD700',
-  autumn: '#D2580A',
-  night:  '#8BB8FF',
+// Leaf — uses the real autumn leaf PNG
+function LeafIcon({ size = 22 }: { size?: number }) {
+  return <img src={leafAutumnIcon} width={size} height={size} style={{ objectFit: 'contain', display: 'block' }} />
 }
 
-const DONUT_R = 38   // ring radius
-const BTN_R = 14     // icon button radius
+// ─── Season color + label ──────────────────────────────────────
+const SEASON_COLORS: Record<Season, string> = {
+  summer: '#FFB800',
+  autumn: '#E2580A',
+  night:  '#7AAAFF',
+}
 
-// Positions: summer at top (-90°), autumn at bottom-left (150°), night at bottom-right (30°)
-const SEASON_POSITIONS: Record<Season, { angle: number }> = {
-  summer: { angle: -90 },
-  autumn: { angle: 150 },
-  night:  { angle: 30 },
+// ─── Donut wheel ──────────────────────────────────────────────
+const SEASONS_ORDER: Season[] = ['summer', 'autumn', 'night']
+// Sectors: each 120°. Start at top (-30° offset so summer is at top)
+// summer: -30°→90°, autumn: 90°→210°, night: 210°→330°
+const SECTOR_RANGES: Record<Season, [number, number]> = {
+  summer: [-30, 90],
+  autumn: [90, 210],
+  night:  [210, 330],
 }
 
 function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Season) => void }) {
-  const size = (DONUT_R + BTN_R + 6) * 2
-  const cx = size / 2
-  const cy = size / 2
+  const SIZE = 120
+  const cx = SIZE / 2
+  const cy = SIZE / 2
+  const R_OUTER = 52    // outer donut radius
+  const R_INNER = 26    // inner hole radius
+  const ICON_R = 42     // icon placement radius (midpoint of arc)
 
   return (
-    <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20 }}>
-      <svg width={size} height={size}>
-        {/* Donut ring */}
-        <circle cx={cx} cy={cy} r={DONUT_R} fill="none"
-          stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
-
-        {/* Season buttons on the ring */}
-        {(Object.entries(SEASON_POSITIONS) as [Season, { angle: number }][]).map(([s, { angle }]) => {
-          const rad = (angle * Math.PI) / 180
-          const bx = cx + DONUT_R * Math.cos(rad)
-          const by = cy + DONUT_R * Math.sin(rad)
+    <div style={{
+      position: 'absolute', bottom: 16, left: 16, zIndex: 20,
+      filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.4))',
+    }}>
+      <svg width={SIZE} height={SIZE} style={{ overflow: 'visible' }}>
+        {/* Draw each sector */}
+        {SEASONS_ORDER.map(s => {
+          const [start, end] = SECTOR_RANGES[s]
+          const mid = (start + end) / 2
           const active = season === s
           const color = SEASON_COLORS[s]
+          const iconPos = polarToXY(cx, cy, ICON_R, mid)
+
           return (
             <g key={s} onClick={() => onSelect(s)} style={{ cursor: 'pointer' }}>
-              <circle cx={bx} cy={by} r={BTN_R}
-                fill={active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)'}
-                stroke={active ? color : 'rgba(255,255,255,0.2)'}
+              {/* Sector fill */}
+              <path
+                d={sectorPath(cx, cy, R_OUTER, R_INNER, start, end)}
+                fill={active ? color : 'rgba(30,30,30,0.7)'}
+                stroke={active ? 'white' : 'rgba(255,255,255,0.2)'}
                 strokeWidth={active ? 2.5 : 1}
+                strokeLinejoin="round"
+                style={{ transition: 'fill 0.2s, stroke 0.2s' }}
               />
-              <foreignObject x={bx - 11} y={by - 11} width={22} height={22}
-                style={{ pointerEvents: 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, opacity: active ? 1 : 0.6 }}>
-                  {s === 'summer' ? <SunIcon /> : s === 'autumn' ? <LeafIcon /> : <MoonIcon />}
+              {/* Icon — using foreignObject for React component */}
+              <foreignObject
+                x={iconPos.x - 12} y={iconPos.y - 12}
+                width={24} height={24}
+                style={{ pointerEvents: 'none', overflow: 'visible' }}
+              >
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 24, height: 24,
+                  opacity: active ? 1 : 0.55,
+                  transform: active ? 'scale(1.15)' : 'scale(1)',
+                  transition: 'opacity 0.2s, transform 0.2s',
+                }}>
+                  {s === 'summer' ? <SunIcon size={20}/> : s === 'autumn' ? <LeafIcon size={20}/> : <MoonIcon size={20}/>}
                 </div>
               </foreignObject>
             </g>
           )
         })}
 
-        {/* Active season indicator in center */}
-        <circle cx={cx} cy={cy} r={10}
-          fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
-        <foreignObject x={cx - 9} y={cy - 9} width={18} height={18} style={{ pointerEvents: 'none' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18 }}>
-            {season === 'summer' ? <SunIcon size={14} /> : season === 'autumn' ? <LeafIcon size={14} /> : <MoonIcon size={14} />}
+        {/* Center hole — shows active season icon */}
+        <circle cx={cx} cy={cy} r={R_INNER - 1}
+          fill="rgba(10,10,20,0.75)"
+          stroke="rgba(255,255,255,0.15)" strokeWidth="1"
+        />
+        <foreignObject x={cx-11} y={cy-11} width={22} height={22} style={{ pointerEvents: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22 }}>
+            {season === 'summer' ? <SunIcon size={18}/> : season === 'autumn' ? <LeafIcon size={18}/> : <MoonIcon size={18}/>}
           </div>
         </foreignObject>
       </svg>
