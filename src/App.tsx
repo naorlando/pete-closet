@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 
 import roomBg from './assets/room-background.webp'
 
+import paletteIcon from './assets/icons/icon-palette.webp'
+import { colorizeImage } from './hooks/useColorizedImage'
+
 // New background + windows
 import windowSummer from './assets/window-summer.webp'
 import windowAutumn from './assets/window-autumn.webp'
@@ -77,6 +80,8 @@ interface ClothingItem {
   defaultAdjustment?: Partial<LayerAdjustment> // per-item position/scale override applied on equip
   layerZ?: number   // overrides default slot z-index when rendering
   closetHeight?: string // per-item height override in the closet display
+  colorizable?: boolean // supports HSL hue replacement
+  baseHue?: number      // dominant color hue (0–360) used for replacement targeting
 }
 
 // AdjustmentKey covers regular slots + split sub-slots
@@ -136,6 +141,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetShirt,
     closetHeight: 'calc(551px * 0.22)',
     defaultAdjustment: { x: 13, y: 6,  scale: 1.10, rotate: 0 },
+    colorizable: true, baseHue: 50,
   },
   // LEGS — hang on rod
   {
@@ -148,6 +154,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetJeans,
     closetHeight: 'calc(551px * 0.32)',
     defaultAdjustment: { x: 4, y: 55, scale: 0.85, rotate: 0 },
+    colorizable: true, baseHue: 210,
   },
   // BODY — full outfit, hangs on rod, overrides legs + torso
   {
@@ -184,6 +191,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetScarf,
     closetHeight: 'calc(551px * 0.15)',
     defaultAdjustment: { x: -16, y: 22, scale: 1.15, rotate: 0 },
+    colorizable: true, baseHue: 0,
   },
   // FEET — bottom boxes
   {
@@ -197,6 +205,7 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
     defaultAdjustment: { x: 2, y: 5, scale: 1.10, rotate: 0 },
+    colorizable: true, baseHue: 0,
   },
   {
     id: 'socks',
@@ -222,6 +231,7 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.18)',
     isShoe: true,
     defaultAdjustment: { x: 2, y: 5, scale: 1.10, rotate: 0 },
+    colorizable: true, baseHue: 20,
   },
   // Shorts — legs slot
   {
@@ -234,6 +244,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetShorts,
     closetHeight: 'calc(551px * 0.22)',
     defaultAdjustment: { x: 9, y: 96, scale: 0.85, rotate: 0 },
+    colorizable: true, baseHue: 190,
   },
   // Baseball cap — head slot
   {
@@ -246,6 +257,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetCap,
     closetHeight: 'calc(551px * 0.15)',
     defaultAdjustment: { x: 30, y: -26, scale: 1.15, rotate: 0 },
+    colorizable: true, baseHue: 200,
   },
   // Winter coat — torso slot
   {
@@ -258,6 +270,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetCoatWinter,
     closetHeight: 'calc(551px * 0.30)',
     defaultAdjustment: { x: 13, y: 32, scale: 1.10, rotate: 0 },
+    colorizable: true, baseHue: 150,
   },
 ]
 
@@ -309,6 +322,7 @@ interface ClosetProps {
   onPointerEnter: (id: string) => void
   onPointerLeave: () => void
   onClosetAdjPointerDown: (id: string, e: React.PointerEvent) => void
+  getItemImage: (item: ClothingItem, forPete: boolean) => string
 }
 
 const HARD_OUTLINE =
@@ -328,6 +342,7 @@ function Closet({
   onPointerEnter,
   onPointerLeave,
   onClosetAdjPointerDown,
+  getItemImage,
 }: ClosetProps) {
   // Horizontal bounds of the closet area (fraction of screen width)
   const CLOSET_LEFT  = 0.685
@@ -393,7 +408,7 @@ function Closet({
         >
           <Hanger />
           <img
-            src={item.closetThumbnail ?? item.thumbnail}
+            src={getItemImage(item, false)}
             alt={item.word}
             className="object-contain -mt-1"
             style={{
@@ -452,7 +467,7 @@ function Closet({
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
       >
         <img
-          src={item.closetThumbnail ?? item.thumbnail}
+          src={getItemImage(item, false)}
           alt={item.word}
           className="object-contain"
           style={{
@@ -514,7 +529,7 @@ function Closet({
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
       >
         <img
-          src={item.closetThumbnail ?? item.thumbnail}
+          src={getItemImage(item, false)}
           alt={item.word}
           className="object-contain"
           style={{
@@ -574,6 +589,7 @@ interface PeteProps {
   onPetePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
   onPetePointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void
   onPetePointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void
+  getItemImage: (item: ClothingItem, forPete: boolean) => string
 }
 
 function Pete({
@@ -590,6 +606,7 @@ function Pete({
   onPetePointerDown,
   onPetePointerMove,
   onPetePointerUp,
+  getItemImage,
 }: PeteProps) {
   // body slot active → override legs + torso (pyjamas mode)
   const equippedBody  = equipped.body  ? ITEMS.find(i => i.id === equipped.body)  : null
@@ -685,7 +702,7 @@ function Pete({
         {equippedLegs && (
           <img
             key={equippedLegs.id}
-            src={equippedLegs.layer}
+            src={getItemImage(equippedLegs, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
             style={buildLayerStyle(2, SLOT.LEGS)}
@@ -694,29 +711,29 @@ function Pete({
           />
         )}
 
-        {/* z=3 — Torso layer (shirt) */}
-        {equippedTorso && (
-          <img
-            key={equippedTorso.id}
-            src={equippedTorso.layer}
-            alt=""
-            className="absolute inset-0 h-full w-auto object-contain"
-            style={buildLayerStyle(3, SLOT.TORSO)}
-            draggable={false}
-            onPointerDown={e => handleLayerPointerDown(SLOT.TORSO, e)}
-          />
-        )}
-
-        {/* z=4 — Body layer (pyjamas — covers legs + torso) */}
+        {/* z=3 — Body layer (pyjamas — base full-body, under torso) */}
         {equippedBody && (
           <img
             key={equippedBody.id}
-            src={equippedBody.layer}
+            src={getItemImage(equippedBody, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
-            style={buildLayerStyle(4, SLOT.BODY)}
+            style={buildLayerStyle(3, SLOT.BODY)}
             draggable={false}
             onPointerDown={e => handleLayerPointerDown(SLOT.BODY, e)}
+          />
+        )}
+
+        {/* z=4 — Torso layer (shirt / coat — goes over body) */}
+        {equippedTorso && (
+          <img
+            key={equippedTorso.id}
+            src={getItemImage(equippedTorso, true)}
+            alt=""
+            className="absolute inset-0 h-full w-auto object-contain"
+            style={buildLayerStyle(4, SLOT.TORSO)}
+            draggable={false}
+            onPointerDown={e => handleLayerPointerDown(SLOT.TORSO, e)}
           />
         )}
 
@@ -745,7 +762,7 @@ function Pete({
         ) : (
           <img
             key={equippedFeet.id}
-            src={equippedFeet.layer}
+            src={getItemImage(equippedFeet, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
             style={buildLayerStyle(equippedFeet.layerZ ?? 5, SLOT.FEET)}
@@ -757,7 +774,7 @@ function Pete({
         {/* z=6 — Neck layer (scarf), below hat */}
         {equippedNeck && (
           <img
-            src={equippedNeck.layer}
+            src={getItemImage(equippedNeck, true)}
             style={buildLayerStyle(6, SLOT.NECK)}
             className="absolute inset-0 h-full w-auto object-contain"
             draggable={false}
@@ -769,7 +786,7 @@ function Pete({
         {equippedHead && (
           <img
             key={equippedHead.id}
-            src={equippedHead.layer}
+            src={getItemImage(equippedHead, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
             style={buildLayerStyle(7, SLOT.HEAD)}
@@ -1454,6 +1471,15 @@ export default function App() {
 
   const peteRef = useRef<HTMLDivElement>(null)
 
+  // ── Color palette state ──────────────────────────────────────────────────────
+
+  // itemColors: item.id → target hue (null = original color)
+  const [itemColors, setItemColors] = useState<Record<string, number | null>>({})
+  // colorizedImages: "itemId|hue|layer" or "itemId|hue|thumb" → data URL
+  const [colorizedImages, setColorizedImages] = useState<Record<string, string>>({})
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const [colorTarget, setColorTarget] = useState<string | null>(null)
+
   // ── Preload Pete variant images on mount ────────────────────────────────────
 
   useEffect(() => {
@@ -1464,6 +1490,60 @@ export default function App() {
       layerShorts, layerCap, layerCoatWinter]
     srcs.forEach(src => { const img = new window.Image(); img.src = src })
   }, []);
+
+  // ── Palette: auto-close / reset colorTarget when equipped items change ───────
+
+  useEffect(() => {
+    const equippedColorizable = Object.values(equipped).filter(
+      id => id && ITEMS.find(i => i.id === id)?.colorizable
+    )
+    if (equippedColorizable.length === 0) {
+      setPaletteOpen(false)
+      setColorTarget(null)
+      return
+    }
+    // If current colorTarget is no longer equipped, reset to first available
+    if (colorTarget && !equippedColorizable.includes(colorTarget)) {
+      setColorTarget(equippedColorizable[0] ?? null)
+    }
+  }, [equipped, colorTarget])
+
+  // ── Colorization: trigger canvas HSL replacement when itemColors changes ────
+
+  useEffect(() => {
+    Object.entries(itemColors).forEach(([itemId, hue]) => {
+      if (hue === null) return
+      const item = ITEMS.find(i => i.id === itemId)
+      if (!item?.colorizable || item.baseHue === undefined) return
+
+      const sources: Array<{ src: string; cacheKey: string }> = [
+        { src: item.layer, cacheKey: `${itemId}|${hue}|layer` },
+        { src: item.closetThumbnail ?? item.thumbnail, cacheKey: `${itemId}|${hue}|thumb` },
+      ]
+
+      sources.forEach(({ src, cacheKey }) => {
+        setColorizedImages(prev => {
+          if (prev[cacheKey]) return prev // already cached, skip
+          colorizeImage(src, hue, item.baseHue!, 38).then(dataUrl => {
+            setColorizedImages(p => ({ ...p, [cacheKey]: dataUrl }))
+          })
+          return prev
+        })
+      })
+    })
+  }, [itemColors])
+
+  // ── getItemImage: resolve effective image URL for an item ────────────────────
+
+  function getItemImage(item: ClothingItem, forPete = false): string {
+    const hue = itemColors[item.id]
+    if (hue === null || hue === undefined) {
+      return forPete ? item.layer : (item.closetThumbnail ?? item.thumbnail)
+    }
+    const cacheKey = `${item.id}|${hue}|${forPete ? 'layer' : 'thumb'}`
+    const base = forPete ? item.layer : (item.closetThumbnail ?? item.thumbnail)
+    return colorizedImages[cacheKey] ?? base
+  }
 
   // ── Drag: global pointer events ─────────────────────────────────────────────
 
@@ -1778,6 +1858,19 @@ export default function App() {
     peteDragRef.current = null
   }
 
+  // ── Color swatches constant ──────────────────────────────────────────────────
+
+  const COLOR_SWATCHES = [
+    { hue: 0,   label: 'Red',    hex: '#E83030' },
+    { hue: 25,  label: 'Orange', hex: '#E87A20' },
+    { hue: 50,  label: 'Yellow', hex: '#F5C800' },
+    { hue: 120, label: 'Green',  hex: '#30B840' },
+    { hue: 190, label: 'Teal',   hex: '#20B8C8' },
+    { hue: 220, label: 'Blue',   hex: '#2050D8' },
+    { hue: 270, label: 'Purple', hex: '#8030C8' },
+    { hue: 320, label: 'Pink',   hex: '#E030A8' },
+  ] as const
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -1818,6 +1911,7 @@ export default function App() {
         onPointerEnter={id => { if (!drag) setHoveredId(id) }}
         onPointerLeave={() => setHoveredId(undefined)}
         onClosetAdjPointerDown={handleClosetAdjPointerDown}
+        getItemImage={getItemImage}
       />
 
       {/* Pete character with stacked layers */}
@@ -1835,6 +1929,7 @@ export default function App() {
         onPetePointerDown={handlePetePointerDown}
         onPetePointerMove={handlePetePointerMove}
         onPetePointerUp={handlePetePointerUp}
+        getItemImage={getItemImage}
       />
 
       {/* Ghost drag item */}
@@ -1842,6 +1937,123 @@ export default function App() {
 
       {/* Vocabulary badge */}
       {lastWord && <VocabBadge word={lastWord} />}
+
+      {/* Palette button — fades in/out when colorizable items are equipped */}
+      {(() => {
+        const hasColorizable = Object.entries(equipped).some(
+          ([, id]) => id && ITEMS.find(i => i.id === id)?.colorizable
+        )
+        return (
+          <button
+            onClick={() => {
+              if (!hasColorizable) return
+              const newOpen = !paletteOpen
+              setPaletteOpen(newOpen)
+              if (newOpen && !colorTarget) {
+                const firstColorizable = Object.values(equipped).find(id => id && ITEMS.find(i => i.id === id)?.colorizable)
+                if (firstColorizable) setColorTarget(firstColorizable)
+              }
+            }}
+            style={{
+              position: 'absolute', bottom: '8%', left: '48%',
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'none', border: 'none', cursor: hasColorizable ? 'pointer' : 'default',
+              padding: 0, zIndex: 15,
+              opacity: hasColorizable ? 1 : 0,
+              pointerEvents: hasColorizable ? 'auto' : 'none',
+              filter: paletteOpen
+                ? 'drop-shadow(0 0 8px rgba(255,200,0,0.9))'
+                : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+              transition: 'opacity 0.2s, filter 0.2s',
+            }}
+            title="Change color"
+          >
+            <img src={paletteIcon} style={{ width: 48, height: 48, objectFit: 'contain' }} alt="palette" />
+          </button>
+        )
+      })()}
+
+      {/* Color picker panel */}
+      {paletteOpen && (
+        <div style={{
+          position: 'absolute', bottom: '22%', left: '30%',
+          background: 'rgba(10,10,20,0.88)',
+          backdropFilter: 'blur(8px)',
+          borderRadius: 16, padding: 12,
+          border: '1px solid rgba(255,255,255,0.15)',
+          zIndex: 16, display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          {/* Item selector tabs */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {Object.values(equipped)
+              .filter((id): id is string => !!id && !!ITEMS.find(i => i.id === id)?.colorizable)
+              .map(id => {
+                const item = ITEMS.find(i => i.id === id)!
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setColorTarget(id)}
+                    style={{
+                      padding: '3px 8px', borderRadius: 8, fontSize: 11,
+                      background: colorTarget === id ? 'rgba(250,204,21,0.3)' : 'rgba(255,255,255,0.08)',
+                      border: `1px solid ${colorTarget === id ? '#facc15' : 'rgba(255,255,255,0.15)'}`,
+                      color: colorTarget === id ? '#facc15' : '#ccc',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {item.word}
+                  </button>
+                )
+              })}
+          </div>
+          {/* Color swatches */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Reset to original */}
+            <button
+              onClick={() => {
+                if (colorTarget) setItemColors(prev => ({ ...prev, [colorTarget]: null }))
+              }}
+              title="Original"
+              style={{
+                width: 36, height: 36, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)',
+                border: colorTarget && (itemColors[colorTarget] === null || itemColors[colorTarget] === undefined)
+                  ? '3px solid white'
+                  : '2px solid rgba(255,255,255,0.4)',
+                cursor: 'pointer', fontSize: 16,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transform: colorTarget && (itemColors[colorTarget] === null || itemColors[colorTarget] === undefined)
+                  ? 'scale(1.2)'
+                  : 'scale(1)',
+                transition: 'transform 0.15s',
+              }}
+            >
+              ↩
+            </button>
+            {COLOR_SWATCHES.map(({ hue, hex, label }) => {
+              const isActive = colorTarget ? itemColors[colorTarget] === hue : false
+              return (
+                <button
+                  key={hue}
+                  onClick={() => {
+                    if (colorTarget) setItemColors(prev => ({ ...prev, [colorTarget]: hue }))
+                  }}
+                  title={label}
+                  style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: hex,
+                    border: isActive ? '3px solid white' : '2px solid rgba(0,0,0,0.3)',
+                    cursor: 'pointer',
+                    transform: isActive ? 'scale(1.2)' : 'scale(1)',
+                    transition: 'transform 0.15s',
+                    boxShadow: isActive ? `0 0 10px ${hex}` : 'none',
+                  }}
+                />
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Debug panel */}
       {debugMode && (
@@ -1863,19 +2075,23 @@ export default function App() {
         />
       )}
 
-      {/* Debug toggle button — gear icon, no text */}
+      {/* Debug toggle button */}
       <button
         onClick={toggleDebug}
-        className="absolute bottom-4 right-4 z-50 w-10 h-10 flex items-center justify-center rounded-full shadow-lg"
+        className="z-50 flex items-center justify-center shadow-lg"
         style={{
-          background: 'rgba(0,0,0,0.6)',
+          position: 'absolute', top: 8, right: 8,
+          width: 28, height: 28, borderRadius: '50%',
+          background: 'rgba(0,0,0,0.55)',
+          border: 'none',
           outline: debugMode ? '2px solid #facc15' : 'none',
         }}
         title="Toggle debug"
       >
         <span
-          className="text-lg leading-none select-none"
+          className="leading-none select-none"
           style={{
+            fontSize: 14,
             display: 'inline-block',
             transition: 'transform 0.4s',
             transform: debugMode ? 'rotate(60deg)' : 'rotate(0deg)',
