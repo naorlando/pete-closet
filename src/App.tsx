@@ -846,7 +846,7 @@ function GhostDrag({ drag, closetAdjustments }: GhostDragProps) {
           width: 'auto',
           objectFit: 'contain',
           transform: `translate(-50%, -50%) rotate(${drag.rotation ?? 0}deg)`,
-          transition: 'transform 0.12s ease-out',
+          transition: 'transform 0.08s ease-out',
           filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))',
           pointerEvents: 'none',
         }}
@@ -1480,7 +1480,7 @@ export default function App() {
       const dt = vel ? now - vel.prevTime : 0
       const prevX = vel ? vel.prevClientX : e.clientX
       const vx = dt > 5 ? (e.clientX - prevX) / dt : 0  // px/ms
-      const targetRotation = Math.max(-22, Math.min(22, vx * 18))
+      const targetRotation = Math.max(-35, Math.min(35, vx * 32))
       if (dragVelocityRef.current) {
         dragVelocityRef.current.prevClientX = e.clientX
         dragVelocityRef.current.prevTime = now
