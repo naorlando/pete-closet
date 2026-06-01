@@ -1,0 +1,51 @@
+src/hooks/useColorizedImage.ts
+  s_c8728a075006ef::t_b042be32b6b7b2 1-100
+src/App.tsx
+  s_c8728a075006ef::t_df45851d5b8b56 1941-1974
+  s_c8728a075006ef::t_04f743eb019752 705
+  s_c8728a075006ef::t_708341cfbf74dd 234
+  s_c8728a075006ef::t_b9ecb7d210b16c 194
+  s_c8728a075006ef::t_6e08910f585302 83-84
+  s_c8728a075006ef::t_dc419adc1275ba 260
+  s_c8728a075006ef::t_f8dc766e562438 144
+  s_c8728a075006ef::t_a4f35d91df28de 714-715,717-718,721,723,727-728,730-731,734,736
+  s_c8728a075006ef::t_ae6e96a945c0b5 1914
+  s_c8728a075006ef::t_8db7c11d7dce04 325
+  s_c8728a075006ef::t_533c380a81c9f9 609
+  s_c8728a075006ef::t_e225a1cb444e95 1932
+  s_c8728a075006ef::t_2daf3711531173 2078,2081,2083-2086,2092,2094
+  s_c8728a075006ef::t_d6d09d00c593cd 592
+  s_c8728a075006ef::t_d475f415f2321b 1474-1482
+  s_c8728a075006ef::t_9ce365b1ca162a 789
+  s_c8728a075006ef::t_805feda31e1a59 1511-1547
+  s_c8728a075006ef::t_c012237fd57508 273
+  s_c8728a075006ef::t_b56482763e5aa7 765
+  s_c8728a075006ef::t_8e812eb01f49ac 1494-1510
+  s_c8728a075006ef::t_770f34b0f49525 1861-1873
+  s_c8728a075006ef::t_3470cc401850c5 470
+  s_c8728a075006ef::t_f556bd38da0100 208
+  s_c8728a075006ef::t_64c9ca32f217f6 411
+  s_c8728a075006ef::t_d0ce0bae3aa5e2 532
+  s_c8728a075006ef::t_4f8fb761d14e95 345
+  s_c8728a075006ef::t_f8e266928fe6fc 777
+  s_c8728a075006ef::t_f1412c205ce2d2 1975-2057
+  s_c8728a075006ef::t_2152e5273e13ea 5-7
+  s_c8728a075006ef::t_f6b5e19ba75c15 157
+  s_c8728a075006ef::t_52348362795b75 247
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "bdb358f78f0e3e9d7dbf00682d8c37c2c4e481c3",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
