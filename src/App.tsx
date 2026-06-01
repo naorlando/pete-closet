@@ -1194,6 +1194,111 @@ function DebugPanel({
 
 type Season = 'summer' | 'autumn' | 'night'
 
+// ── Season Wheel ───────────────────────────────────────────────────────────────
+
+function SunIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="5" fill="#FFD700" />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
+        <line
+          key={deg}
+          x1={12 + 8 * Math.cos((deg * Math.PI) / 180)}
+          y1={12 + 8 * Math.sin((deg * Math.PI) / 180)}
+          x2={12 + 11 * Math.cos((deg * Math.PI) / 180)}
+          y2={12 + 11 * Math.sin((deg * Math.PI) / 180)}
+          stroke="#FFD700"
+          strokeWidth="2"
+          strokeLinecap="round"
+        />
+      ))}
+    </svg>
+  )
+}
+
+function LeafIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <path d="M12 3 C6 3 3 8 3 13 C3 18 7 21 12 21 C17 21 21 18 21 13 C21 8 18 3 12 3 Z" fill="#E8640A" />
+      <path d="M7 18 C8 14 10 10 12 3" stroke="#C0440A" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <path d="M12 3 C14 8 16 13 16 18" stroke="#C0440A" strokeWidth="1" fill="none" strokeLinecap="round" />
+      <path d="M9 11 C10 12 14 12 15 11" stroke="#C0440A" strokeWidth="1" fill="none" strokeLinecap="round" />
+      <path d="M12 21 L12 23" stroke="#8B4513" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function MoonIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8D8FF" />
+      <circle cx="16" cy="8" r="1" fill="white" opacity={0.6} />
+      <circle cx="14" cy="14" r="0.7" fill="white" opacity={0.5} />
+    </svg>
+  )
+}
+
+const SEASON_COLORS: Record<Season, string> = {
+  summer: '#FFD700',
+  autumn: '#E8640A',
+  night:  '#C8D8FF',
+}
+
+interface SeasonBtnProps {
+  season: Season
+  current: Season
+  icon: React.ReactNode
+  onClick: (s: Season) => void
+}
+
+function SeasonBtn({ season, current, icon, onClick }: SeasonBtnProps) {
+  const isActive = season === current
+  return (
+    <button
+      onClick={() => onClick(season)}
+      title={season.charAt(0).toUpperCase() + season.slice(1)}
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.5)',
+        border: isActive ? `2px solid ${SEASON_COLORS[season]}` : '2px solid transparent',
+        backdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        padding: 0,
+        transition: 'background 0.2s, border-color 0.2s',
+        flexShrink: 0,
+      }}
+    >
+      {icon}
+    </button>
+  )
+}
+
+interface SeasonWheelProps {
+  season: Season
+  onSelect: (s: Season) => void
+}
+
+function SeasonWheel({ season, onSelect }: SeasonWheelProps) {
+  return (
+    <div style={{ position: 'absolute', bottom: 20, left: 20, zIndex: 20 }}>
+      {/* Top button: summer */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+        <SeasonBtn season="summer" current={season} onClick={onSelect} icon={<SunIcon />} />
+      </div>
+      {/* Bottom row: autumn (left), night (right) */}
+      <div style={{ display: 'flex', gap: 4 }}>
+        <SeasonBtn season="autumn" current={season} onClick={onSelect} icon={<LeafIcon />} />
+        <SeasonBtn season="night"  current={season} onClick={onSelect} icon={<MoonIcon />} />
+      </div>
+    </div>
+  )
+}
+
 const WINDOW_SRC: Record<Season, string> = {
   summer: windowSummer,
   autumn: windowAutumn,
@@ -1247,7 +1352,7 @@ export default function App() {
   // ── Debug state ─────────────────────────────────────────────────────────────
   const [debugMode, setDebugMode]       = useState(false)
   const [debugTarget, setDebugTarget]   = useState<DebugTarget>('layers')
-  const [peteOffset, setPeteOffset]     = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const [peteOffset, setPeteOffset]     = useState<{ x: number; y: number }>({ x: 33, y: 25 })
   const [adjustments, setAdjustments]   = useState<Record<AdjustmentKey, LayerAdjustment>>(DEFAULT_ADJUSTMENTS)
   const [selectedSlot, setSelectedSlot] = useState<AdjustmentKey | null>(null)
   const debugDragRef                    = useRef<DebugDragState | null>(null)
@@ -1606,22 +1711,8 @@ export default function App() {
         draggable={false}
       />
 
-      {/* Season selector */}
-      <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 20, display: 'flex', gap: 6 }}>
-        {(['summer', 'autumn', 'night'] as Season[]).map(s => (
-          <button
-            key={s}
-            onClick={() => setSeason(s)}
-            style={{
-              background: season === s ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.4)',
-              border: 'none', borderRadius: 20, padding: '4px 10px',
-              fontSize: 18, cursor: 'pointer', lineHeight: 1,
-            }}
-          >
-            {s === 'summer' ? '☀️' : s === 'autumn' ? '🍂' : '🌙'}
-          </button>
-        ))}
-      </div>
+      {/* Season wheel — bottom-left radial picker */}
+      <SeasonWheel season={season} onSelect={setSeason} />
 
       {/* Closet: 3 zones — rod, middle shelf, bottom boxes */}
       <Closet
