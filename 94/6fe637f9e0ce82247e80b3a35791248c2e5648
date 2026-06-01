@@ -1,0 +1,21 @@
+src/App.tsx
+  s_c8728a075006ef::t_f917b16988acfb 1966-1967,1969-1970,1975-1976,1984
+  s_c8728a075006ef::t_a7df908cad0290 1992-1995,1997-1998,2000-2001,2003-2004,2026-2029,2036,2041,2047-2048,2059,2063
+  s_c8728a075006ef::t_68e0cfa9d3704b 1482
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "946fe637f9e0ce82247e80b3a35791248c2e5648",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
