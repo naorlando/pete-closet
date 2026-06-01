@@ -87,6 +87,7 @@ interface DragState {
   x: number
   y: number
   wasEquipped: boolean  // dragging off Pete to remove
+  rotation: number      // tilt angle in degrees (velocity-based)
 }
 
 interface VocabWord {
@@ -812,11 +813,22 @@ function Pete({
 
 // ── Ghost drag item (follows cursor) ──────────────────────────────────────────
 
-interface GhostDragProps {
-  drag: DragState
+function getGhostHeight(item: ClothingItem, closetAdj: Record<string, ClosetItemAdjustment>): string {
+  const h = item.closetHeight ?? 'calc(551px * 0.30)'
+  const scale = closetAdj[item.id]?.scale ?? 1
+  const match = h.match(/calc\(551px \* ([\d.]+)\)/)
+  if (match) {
+    return `calc(551px * ${(parseFloat(match[1]) * scale).toFixed(4)})`
+  }
+  return h
 }
 
-function GhostDrag({ drag }: GhostDragProps) {
+interface GhostDragProps {
+  drag: DragState
+  closetAdjustments: Record<string, ClosetItemAdjustment>
+}
+
+function GhostDrag({ drag, closetAdjustments }: GhostDragProps) {
   return (
     <div
       className="absolute pointer-events-none z-50 flex flex-col items-center"
@@ -828,11 +840,15 @@ function GhostDrag({ drag }: GhostDragProps) {
       <img
         src={drag.item.closetThumbnail ?? drag.item.thumbnail}
         alt={drag.item.word}
-        className="drag-wave object-contain"
+        className="object-contain"
         style={{
-          height: drag.item.closetHeight ?? 'calc(551px * 0.30)',
+          height: getGhostHeight(drag.item, closetAdjustments),
           width: 'auto',
+          objectFit: 'contain',
+          transform: `translate(-50%, -50%) rotate(${drag.rotation ?? 0}deg)`,
+          transition: 'transform 0.12s ease-out',
           filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.4))',
+          pointerEvents: 'none',
         }}
         draggable={false}
       />
@@ -1419,6 +1435,7 @@ export default function App() {
 
   const closetAdjDragRef = useRef<ClosetAdjDragState | null>(null)
   const peteDragRef = useRef<{ startX: number; startY: number; startPeteX: number; startPeteY: number } | null>(null)
+  const dragVelocityRef = useRef<{ prevClientX: number; prevTime: number } | null>(null)
 
   // Closet item per-item adjustments (position + scale, debug only)
   const [closetAdjustments, setClosetAdjustments] = useState<Record<string, ClosetItemAdjustment>>({
@@ -1456,14 +1473,27 @@ export default function App() {
     function onMove(e: PointerEvent) {
       const s = scaleRef.current
       const canvas = canvasRef.current
+
+      // Velocity-based tilt
+      const now = Date.now()
+      const vel = dragVelocityRef.current
+      const dt = vel ? now - vel.prevTime : 0
+      const prevX = vel ? vel.prevClientX : e.clientX
+      const vx = dt > 5 ? (e.clientX - prevX) / dt : 0  // px/ms
+      const targetRotation = Math.max(-22, Math.min(22, vx * 18))
+      if (dragVelocityRef.current) {
+        dragVelocityRef.current.prevClientX = e.clientX
+        dragVelocityRef.current.prevTime = now
+      }
+
       if (!canvas) {
-        setDrag(d => (d ? { ...d, x: e.clientX, y: e.clientY } : null))
+        setDrag(d => (d ? { ...d, x: e.clientX, y: e.clientY, rotation: targetRotation } : null))
         return
       }
       const rect = canvas.getBoundingClientRect()
       const x = (e.clientX - rect.left) / s
       const y = (e.clientY - rect.top)  / s
-      setDrag(d => (d ? { ...d, x, y } : null))
+      setDrag(d => (d ? { ...d, x, y, rotation: targetRotation } : null))
     }
 
     function onUp(e: PointerEvent) {
@@ -1611,7 +1641,8 @@ export default function App() {
     setHoveredId(undefined)
     const isEquipped = equippedIds.has(item.id)
     const { x, y } = clientToCanvas(e.clientX, e.clientY)
-    setDrag({ item, x, y, wasEquipped: isEquipped })
+    dragVelocityRef.current = { prevClientX: e.clientX, prevTime: Date.now() }
+    setDrag({ item, x, y, wasEquipped: isEquipped, rotation: 0 })
   }
 
   function startEquippedDrag(item: ClothingItem, e: React.PointerEvent) {
@@ -1621,7 +1652,8 @@ export default function App() {
     e.stopPropagation()
     setHoveredId(undefined)
     const { x, y } = clientToCanvas(e.clientX, e.clientY)
-    setDrag({ item, x, y, wasEquipped: true })
+    dragVelocityRef.current = { prevClientX: e.clientX, prevTime: Date.now() }
+    setDrag({ item, x, y, wasEquipped: true, rotation: 0 })
   }
 
   function handleClosetAdjPointerDown(id: string, e: React.PointerEvent) {
@@ -1806,7 +1838,7 @@ export default function App() {
       />
 
       {/* Ghost drag item */}
-      {drag && <GhostDrag drag={drag} />}
+      {drag && <GhostDrag drag={drag} closetAdjustments={closetAdjustments} />}
 
       {/* Vocabulary badge */}
       {lastWord && <VocabBadge word={lastWord} />}
