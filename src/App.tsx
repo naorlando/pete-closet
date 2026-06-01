@@ -229,7 +229,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerShorts,
     closetThumbnail: closetShorts,
     closetHeight: 'calc(551px * 0.22)',
-    defaultAdjustment: { x: 4, y: 55, scale: 0.85, rotate: 0 },
+    defaultAdjustment: { x: 9, y: 96, scale: 0.85, rotate: 0 },
   },
   // Baseball cap — head slot
   {
@@ -241,7 +241,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerCap,
     closetThumbnail: closetCap,
     closetHeight: 'calc(551px * 0.15)',
-    defaultAdjustment: { x: 40, y: -42, scale: 1.15, rotate: 0 },
+    defaultAdjustment: { x: 30, y: -26, scale: 1.15, rotate: 0 },
   },
   // Winter coat — torso slot
   {
@@ -253,7 +253,7 @@ const ITEMS: ClothingItem[] = [
     thumbnail: layerCoatWinter,
     closetThumbnail: closetCoatWinter,
     closetHeight: 'calc(551px * 0.30)',
-    defaultAdjustment: { x: 13, y: 6, scale: 1.10, rotate: 0 },
+    defaultAdjustment: { x: 13, y: 32, scale: 1.10, rotate: 0 },
   },
 ]
 
@@ -1196,9 +1196,9 @@ type Season = 'summer' | 'autumn' | 'night'
 
 // ── Season Wheel ───────────────────────────────────────────────────────────────
 
-function SunIcon() {
+function SunIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24">
+    <svg width={size} height={size} viewBox="0 0 24 24">
       <circle cx="12" cy="12" r="5" fill="#FFD700" />
       {[0, 45, 90, 135, 180, 225, 270, 315].map(deg => (
         <line
@@ -1216,21 +1216,25 @@ function SunIcon() {
   )
 }
 
-function LeafIcon() {
+function LeafIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24">
-      <path d="M12 3 C6 3 3 8 3 13 C3 18 7 21 12 21 C17 21 21 18 21 13 C21 8 18 3 12 3 Z" fill="#E8640A" />
-      <path d="M7 18 C8 14 10 10 12 3" stroke="#C0440A" strokeWidth="1.5" fill="none" strokeLinecap="round" />
-      <path d="M12 3 C14 8 16 13 16 18" stroke="#C0440A" strokeWidth="1" fill="none" strokeLinecap="round" />
-      <path d="M9 11 C10 12 14 12 15 11" stroke="#C0440A" strokeWidth="1" fill="none" strokeLinecap="round" />
-      <path d="M12 21 L12 23" stroke="#8B4513" strokeWidth="2" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox="0 0 24 24">
+      {/* Maple leaf shape */}
+      <path d="M12 2 L13.5 6 L17 5 L15 8.5 L19 9 L16 11 L18 14.5 L14.5 13 L14 17 L12 15 L10 17 L9.5 13 L6 14.5 L8 11 L5 9 L9 8.5 L7 5 L10.5 6 Z"
+        fill="#D2580A" />
+      {/* Stem */}
+      <line x1="12" y1="17" x2="12" y2="22" stroke="#8B4513" strokeWidth="1.8" strokeLinecap="round"/>
+      {/* Vein highlights */}
+      <line x1="12" y1="15" x2="8" y2="11" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
+      <line x1="12" y1="15" x2="16" y2="11" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
+      <line x1="12" y1="10" x2="12" y2="3" stroke="#E87020" strokeWidth="0.8" opacity="0.6"/>
     </svg>
   )
 }
 
-function MoonIcon() {
+function MoonIcon({ size = 22 }: { size?: number }) {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24">
+    <svg width={size} height={size} viewBox="0 0 24 24">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="#C8D8FF" />
       <circle cx="16" cy="8" r="1" fill="white" opacity={0.6} />
       <circle cx="14" cy="14" r="0.7" fill="white" opacity={0.5} />
@@ -1240,61 +1244,65 @@ function MoonIcon() {
 
 const SEASON_COLORS: Record<Season, string> = {
   summer: '#FFD700',
-  autumn: '#E8640A',
-  night:  '#C8D8FF',
+  autumn: '#D2580A',
+  night:  '#8BB8FF',
 }
 
-interface SeasonBtnProps {
-  season: Season
-  current: Season
-  icon: React.ReactNode
-  onClick: (s: Season) => void
+const DONUT_R = 38   // ring radius
+const BTN_R = 14     // icon button radius
+
+// Positions: summer at top (-90°), autumn at bottom-left (150°), night at bottom-right (30°)
+const SEASON_POSITIONS: Record<Season, { angle: number }> = {
+  summer: { angle: -90 },
+  autumn: { angle: 150 },
+  night:  { angle: 30 },
 }
 
-function SeasonBtn({ season, current, icon, onClick }: SeasonBtnProps) {
-  const isActive = season === current
+function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Season) => void }) {
+  const size = (DONUT_R + BTN_R + 6) * 2
+  const cx = size / 2
+  const cy = size / 2
+
   return (
-    <button
-      onClick={() => onClick(season)}
-      title={season.charAt(0).toUpperCase() + season.slice(1)}
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: '50%',
-        background: isActive ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.5)',
-        border: isActive ? `2px solid ${SEASON_COLORS[season]}` : '2px solid transparent',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        padding: 0,
-        transition: 'background 0.2s, border-color 0.2s',
-        flexShrink: 0,
-      }}
-    >
-      {icon}
-    </button>
-  )
-}
+    <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 20 }}>
+      <svg width={size} height={size}>
+        {/* Donut ring */}
+        <circle cx={cx} cy={cy} r={DONUT_R} fill="none"
+          stroke="rgba(255,255,255,0.15)" strokeWidth="3" />
 
-interface SeasonWheelProps {
-  season: Season
-  onSelect: (s: Season) => void
-}
+        {/* Season buttons on the ring */}
+        {(Object.entries(SEASON_POSITIONS) as [Season, { angle: number }][]).map(([s, { angle }]) => {
+          const rad = (angle * Math.PI) / 180
+          const bx = cx + DONUT_R * Math.cos(rad)
+          const by = cy + DONUT_R * Math.sin(rad)
+          const active = season === s
+          const color = SEASON_COLORS[s]
+          return (
+            <g key={s} onClick={() => onSelect(s)} style={{ cursor: 'pointer' }}>
+              <circle cx={bx} cy={by} r={BTN_R}
+                fill={active ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)'}
+                stroke={active ? color : 'rgba(255,255,255,0.2)'}
+                strokeWidth={active ? 2.5 : 1}
+              />
+              <foreignObject x={bx - 11} y={by - 11} width={22} height={22}
+                style={{ pointerEvents: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, opacity: active ? 1 : 0.6 }}>
+                  {s === 'summer' ? <SunIcon /> : s === 'autumn' ? <LeafIcon /> : <MoonIcon />}
+                </div>
+              </foreignObject>
+            </g>
+          )
+        })}
 
-function SeasonWheel({ season, onSelect }: SeasonWheelProps) {
-  return (
-    <div style={{ position: 'absolute', bottom: 20, left: 20, zIndex: 20 }}>
-      {/* Top button: summer */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-        <SeasonBtn season="summer" current={season} onClick={onSelect} icon={<SunIcon />} />
-      </div>
-      {/* Bottom row: autumn (left), night (right) */}
-      <div style={{ display: 'flex', gap: 4 }}>
-        <SeasonBtn season="autumn" current={season} onClick={onSelect} icon={<LeafIcon />} />
-        <SeasonBtn season="night"  current={season} onClick={onSelect} icon={<MoonIcon />} />
-      </div>
+        {/* Active season indicator in center */}
+        <circle cx={cx} cy={cy} r={10}
+          fill="rgba(0,0,0,0.4)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+        <foreignObject x={cx - 9} y={cy - 9} width={18} height={18} style={{ pointerEvents: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18 }}>
+            {season === 'summer' ? <SunIcon size={14} /> : season === 'autumn' ? <LeafIcon size={14} /> : <MoonIcon size={14} />}
+          </div>
+        </foreignObject>
+      </svg>
     </div>
   )
 }
