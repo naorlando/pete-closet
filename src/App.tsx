@@ -1377,9 +1377,13 @@ export default function App() {
     function onMove(e: PointerEvent) {
       const state = closetAdjDragRef.current
       if (!state) return
-      const s  = scaleRef.current
-      const dx = (e.clientX - state.startPointerX) / s
-      const dy = (e.clientY - state.startPointerY) / s
+      const canvasRect = canvasRef.current?.getBoundingClientRect()
+      if (!canvasRect) return
+      const s = scaleRef.current
+      const currentCanvasX = (e.clientX - canvasRect.left) / s
+      const currentCanvasY = (e.clientY - canvasRect.top)  / s
+      const dx = currentCanvasX - state.startPointerX
+      const dy = currentCanvasY - state.startPointerY
       setClosetAdjustments(prev => ({
         ...prev,
         [state.id]: {
