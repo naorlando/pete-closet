@@ -1,0 +1,25 @@
+src/App.tsx
+  s_c8728a075006ef::t_e6ca9651ba7e24 829,831-836
+  s_c8728a075006ef::t_8232de7c1de18e 351-355,357
+  s_c8728a075006ef::t_49146ff2809c98 480,483,485-486
+  s_c8728a075006ef::t_986984e0867e1d 1279-1281,1283-1285,1287,1290-1299,1304,1306-1307,1316-1319,1321,1331-1333,1335-1337,1344-1347,1349-1354
+  s_c8728a075006ef::t_623f01044bffd1 421,423
+src/index.css
+  s_c8728a075006ef::t_e8c340d2e373ad 112-123
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "bbfdd1fde6767298e235f48aa8ec6823b6027c2f",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
