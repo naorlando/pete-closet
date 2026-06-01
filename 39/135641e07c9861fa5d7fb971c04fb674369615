@@ -1,0 +1,21 @@
+src/App.tsx
+  s_c8728a075006ef::t_21b9a8bef09227 1966-1967,1972,1980
+  s_c8728a075006ef::t_4bbe87a0806e43 1541-1553
+  s_c8728a075006ef::t_ebb9899c6b3078 1988
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "39135641e07c9861fa5d7fb971c04fb674369615",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
