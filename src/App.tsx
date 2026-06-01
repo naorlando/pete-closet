@@ -116,6 +116,8 @@ interface ClosetAdjDragState {
 
 type ClosetItemAdjustment = { x: number; y: number; scale: number }
 
+type DebugTarget = 'pete' | 'layers' | 'closet'
+
 // ── Item definitions ───────────────────────────────────────────────────────────
 
 const ITEMS: ClothingItem[] = [
@@ -297,6 +299,7 @@ interface ClosetProps {
   draggingId: string | undefined
   hoveredId: string | undefined
   debugMode: boolean
+  debugTarget: DebugTarget
   closetAdjustments: Record<string, ClosetItemAdjustment>
   onPointerDown: (item: ClothingItem, e: React.PointerEvent) => void
   onPointerEnter: (id: string) => void
@@ -315,6 +318,7 @@ function Closet({
   draggingId,
   hoveredId,
   debugMode,
+  debugTarget,
   closetAdjustments,
   onPointerDown,
   onPointerEnter,
@@ -362,11 +366,12 @@ function Closet({
         }}
         onPointerDown={e => {
           e.preventDefault()
-          if (debugMode) {
+          if (debugMode && debugTarget === 'closet') {
             onClosetAdjPointerDown(item.id, e)
-          } else {
-            onPointerDown(item, e)
+            return
           }
+          if (debugMode) return  // debug mode handles its own drag
+          onPointerDown(item, e)
         }}
         onPointerEnter={() => { if (!debugMode) onPointerEnter(item.id) }}
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
@@ -428,11 +433,12 @@ function Closet({
         }}
         onPointerDown={e => {
           e.preventDefault()
-          if (debugMode) {
+          if (debugMode && debugTarget === 'closet') {
             onClosetAdjPointerDown(item.id, e)
-          } else {
-            onPointerDown(item, e)
+            return
           }
+          if (debugMode) return  // debug mode handles its own drag
+          onPointerDown(item, e)
         }}
         onPointerEnter={() => { if (!debugMode) onPointerEnter(item.id) }}
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
@@ -488,11 +494,12 @@ function Closet({
         }}
         onPointerDown={e => {
           e.preventDefault()
-          if (debugMode) {
+          if (debugMode && debugTarget === 'closet') {
             onClosetAdjPointerDown(item.id, e)
-          } else {
-            onPointerDown(item, e)
+            return
           }
+          if (debugMode) return  // debug mode handles its own drag
+          onPointerDown(item, e)
         }}
         onPointerEnter={() => { if (!debugMode) onPointerEnter(item.id) }}
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
@@ -548,6 +555,8 @@ interface PeteProps {
   peteRef: React.RefObject<HTMLDivElement | null>
   equipped: Record<SlotId, string | null>
   debugMode: boolean
+  peteOffset: { x: number; y: number }
+  peteDebugActive: boolean
   adjustments: Record<AdjustmentKey, LayerAdjustment>
   selectedSlot: AdjustmentKey | null
   onSelectSlot: (slot: AdjustmentKey) => void
@@ -559,6 +568,8 @@ function Pete({
   peteRef,
   equipped,
   debugMode,
+  peteOffset,
+  peteDebugActive,
   adjustments,
   selectedSlot,
   onSelectSlot,
@@ -635,7 +646,12 @@ function Pete({
     <div
       ref={peteRef}
       className="absolute select-none"
-      style={{ left: '38%', bottom: '14%', transform: 'translateX(-50%)' }}
+      style={{
+        left: '38%',
+        bottom: '14%',
+        transform: `translateX(calc(-50% + ${peteOffset.x}px)) translateY(${peteOffset.y}px)`,
+        cursor: peteDebugActive ? 'move' : undefined,
+      }}
     >
       <div className="relative" style={{ height: '551px', width: 'auto' }}>
 
@@ -833,56 +849,57 @@ interface DebugPanelProps {
   adjustments: Record<AdjustmentKey, LayerAdjustment>
   selectedSlot: AdjustmentKey | null
   closetAdjustments: Record<string, ClosetItemAdjustment>
+  peteOffset: { x: number; y: number }
+  debugTarget: DebugTarget
+  onDebugTargetChange: (target: DebugTarget) => void
   onAdjustScale: (slot: AdjustmentKey, delta: number) => void
   onAdjustRotate: (slot: AdjustmentKey, delta: number) => void
   onAdjustPosition: (slot: AdjustmentKey, dx: number, dy: number) => void
   onSelectSlot: (slot: AdjustmentKey) => void
   onAdjustClosetItem: (id: string, patch: Partial<ClosetItemAdjustment>) => void
+  onNudgePete: (dx: number, dy: number) => void
+  onResetPete: () => void
 }
 
 const SLOT_ORDER: SlotId[] = [SLOT.BODY, SLOT.TORSO, SLOT.LEGS, SLOT.FEET, SLOT.NECK, SLOT.HEAD]
+
+const DEBUG_TAB_STYLE_BASE: React.CSSProperties = {
+  flex: 1, padding: '3px 0', fontSize: 10,
+  borderRadius: 4, cursor: 'pointer', textTransform: 'uppercase',
+}
 
 function DebugPanel({
   equipped,
   adjustments,
   selectedSlot,
   closetAdjustments,
+  peteOffset,
+  debugTarget,
+  onDebugTargetChange,
   onAdjustScale,
   onAdjustRotate,
   onAdjustPosition,
   onSelectSlot,
   onAdjustClosetItem,
+  onNudgePete,
+  onResetPete,
 }: DebugPanelProps) {
-  const [layersOpen, setLayersOpen] = useState(true)
-  const [closetOpen, setClosetOpen] = useState(false)
-
   const equippedFeetItem = equipped.feet ? ITEMS.find(i => i.id === equipped.feet) : null
   const feetIsSplit = equippedFeetItem?.isSplit ?? false
 
-  // Build the list of adjustment keys to show in the panel
+  // Build the list of adjustment keys to show in the layers panel
   const equippedKeys: AdjustmentKey[] = SLOT_ORDER.flatMap(slot => {
     if (equipped[slot] === null) return []
     if (slot === SLOT.FEET && feetIsSplit) return ['feet-left', 'feet-right']
     return [slot]
   })
 
-  if (equippedKeys.length === 0) {
-    return (
-      <div
-        className="absolute left-4 z-50 rounded-lg p-2 text-xs text-white/60"
-        style={{ background: 'rgba(0,0,0,0.75)', minWidth: 180, bottom: 60, maxHeight: '70%', overflowY: 'auto' }}
-      >
-        No layers equipped
-      </div>
-    )
-  }
-
   return (
     <div
       className="absolute left-4 z-50 rounded-lg p-2 font-mono text-xs"
       style={{ background: 'rgba(0,0,0,0.82)', minWidth: 240, bottom: 60, maxHeight: '70%', overflowY: 'auto' }}
     >
-      <p className="text-yellow-400 font-bold mb-1 text-[10px] uppercase tracking-widest">
+      <p className="text-yellow-400 font-bold mb-2 text-[10px] uppercase tracking-widest">
         Layer Debugger
       </p>
 
@@ -892,6 +909,7 @@ function DebugPanel({
           const data = {
             layers: adjustments,
             closet: closetAdjustments,
+            pete: peteOffset,
           }
           navigator.clipboard.writeText(JSON.stringify(data, null, 2))
             .then(() => alert('Copied to clipboard!'))
@@ -905,209 +923,258 @@ function DebugPanel({
         📋 Export values
       </button>
 
-      {/* LAYERS section header */}
-      <div
-        onClick={() => setLayersOpen(o => !o)}
-        style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4 }}
-        className="text-white/70 font-bold text-[10px] uppercase tracking-widest mb-1"
-      >
-        <span>{layersOpen ? '▼' : '▶'}</span>
-        <span>LAYERS</span>
-      </div>
-
-      {layersOpen && (
-        <>
-      {/* Column headers */}
-      <div className="grid gap-x-2 text-white/40 mb-1" style={{ gridTemplateColumns: '68px 36px 36px 44px 44px 60px' }}>
-        <span>SLOT</span>
-        <span className="text-right">X</span>
-        <span className="text-right">Y</span>
-        <span className="text-right">SCALE</span>
-        <span className="text-right">ROT</span>
-        <span />
-      </div>
-
-      {equippedKeys.map(slot => {
-        const adj = adjustments[slot]
-        const isSelected = selectedSlot === slot
-
-        return (
-          <div
-            key={slot}
-            className="rounded px-1 py-0.5 mb-1 cursor-pointer"
+      {/* Mode selector tabs */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+        {(['pete', 'layers', 'closet'] as const).map(mode => (
+          <button
+            key={mode}
+            onClick={() => onDebugTargetChange(mode)}
             style={{
-              background: isSelected ? 'rgba(255,0,0,0.15)' : 'transparent',
-              border: isSelected ? '1px solid rgba(255,0,0,0.4)' : '1px solid transparent',
+              ...DEBUG_TAB_STYLE_BASE,
+              background: debugTarget === mode ? 'rgba(250,204,21,0.3)' : 'rgba(255,255,255,0.05)',
+              border: debugTarget === mode ? '1px solid #facc15' : '1px solid rgba(255,255,255,0.15)',
+              color: debugTarget === mode ? '#facc15' : '#aaa',
             }}
-            onClick={() => onSelectSlot(slot)}
           >
-            <div className="grid gap-x-2 items-center" style={{ gridTemplateColumns: '68px 36px 36px 44px 44px 60px' }}>
-              {/* Slot name */}
-              <span className={isSelected ? 'text-red-400 font-bold' : 'text-white/80'}>
-                {slot}
-              </span>
+            {mode === 'pete' ? '🐱 Pete' : mode === 'layers' ? '👕 Layers' : '🚪 Closet'}
+          </button>
+        ))}
+      </div>
 
-              {/* X */}
-              <span className="text-right text-cyan-300">{Math.round(adj.x)}</span>
-
-              {/* Y */}
-              <span className="text-right text-cyan-300">{Math.round(adj.y)}</span>
-
-              {/* Scale */}
-              <span className="text-right text-green-300">{adj.scale.toFixed(2)}</span>
-
-              {/* Rotate */}
-              <span className="text-right text-orange-300">{adj.rotate}°</span>
-
-              {/* Scale buttons */}
-              <div className="flex gap-1 justify-end">
-                <button
-                  className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); onAdjustScale(slot, 0.05) }}
-                >
-                  +
-                </button>
-                <button
-                  className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                  onClick={e => { e.stopPropagation(); onAdjustScale(slot, -0.05) }}
-                >
-                  −
-                </button>
-              </div>
-            </div>
-
-            {/* Rotate buttons — always visible per slot */}
-            <div className="mt-1 flex items-center gap-1">
-              <span className="text-white/40 text-[10px] w-6">ROT</span>
-              <button
-                className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                onClick={e => { e.stopPropagation(); onAdjustRotate(slot, 1) }}
-              >
-                ↻
-              </button>
-              <button
-                className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                onClick={e => { e.stopPropagation(); onAdjustRotate(slot, -1) }}
-              >
-                ↺
-              </button>
-            </div>
-
-            {/* Arrow nudge buttons — only for selected slot */}
-            {isSelected && (
-              <div className="mt-1.5 flex flex-col items-center gap-0.5">
-                <button
-                  className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                  onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 0, -1) }}
-                >
-                  ↑
-                </button>
-                <div className="flex gap-1">
-                  <button
-                    className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                    onClick={e => { e.stopPropagation(); onAdjustPosition(slot, -1, 0) }}
-                  >
-                    ←
-                  </button>
-                  <button
-                    className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                    onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 1, 0) }}
-                  >
-                    →
-                  </button>
-                </div>
-                <button
-                  className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                  onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 0, 1) }}
-                >
-                  ↓
-                </button>
-              </div>
-            )}
+      {/* ── PETE section ─────────────────────────────────────────────────────── */}
+      {debugTarget === 'pete' && (
+        <div>
+          <div style={{ color: '#ccc', fontSize: 10, marginBottom: 4 }}>
+            Pete position: x={peteOffset.x} y={peteOffset.y}
           </div>
-        )
-      })}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 3, width: 90 }}>
+            <div />
+            <button
+              className="h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+              onClick={() => onNudgePete(0, -1)}
+            >
+              ↑
+            </button>
+            <div />
+            <button
+              className="h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+              onClick={() => onNudgePete(-1, 0)}
+            >
+              ←
+            </button>
+            <button
+              className="h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+              onClick={() => onResetPete()}
+            >
+              ⊙
+            </button>
+            <button
+              className="h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+              onClick={() => onNudgePete(1, 0)}
+            >
+              →
+            </button>
+            <div />
+            <button
+              className="h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+              onClick={() => onNudgePete(0, 1)}
+            >
+              ↓
+            </button>
+            <div />
+          </div>
+          <button
+            style={{
+              marginTop: 4, fontSize: 9, padding: '2px 6px',
+              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 3, color: '#aaa', cursor: 'pointer',
+            }}
+            onClick={() => onResetPete()}
+          >
+            Reset
+          </button>
+        </div>
+      )}
+
+      {/* ── LAYERS section ───────────────────────────────────────────────────── */}
+      {debugTarget === 'layers' && (
+        <>
+          {equippedKeys.length === 0 ? (
+            <div className="text-white/40 text-[10px]">No layers equipped</div>
+          ) : (
+            <>
+              {/* Column headers */}
+              <div className="grid gap-x-2 text-white/40 mb-1" style={{ gridTemplateColumns: '68px 36px 36px 44px 44px 60px' }}>
+                <span>SLOT</span>
+                <span className="text-right">X</span>
+                <span className="text-right">Y</span>
+                <span className="text-right">SCALE</span>
+                <span className="text-right">ROT</span>
+                <span />
+              </div>
+
+              {equippedKeys.map(slot => {
+                const adj = adjustments[slot]
+                const isSelected = selectedSlot === slot
+
+                return (
+                  <div
+                    key={slot}
+                    className="rounded px-1 py-0.5 mb-1 cursor-pointer"
+                    style={{
+                      background: isSelected ? 'rgba(255,0,0,0.15)' : 'transparent',
+                      border: isSelected ? '1px solid rgba(255,0,0,0.4)' : '1px solid transparent',
+                    }}
+                    onClick={() => onSelectSlot(slot)}
+                  >
+                    <div className="grid gap-x-2 items-center" style={{ gridTemplateColumns: '68px 36px 36px 44px 44px 60px' }}>
+                      <span className={isSelected ? 'text-red-400 font-bold' : 'text-white/80'}>
+                        {slot}
+                      </span>
+                      <span className="text-right text-cyan-300">{Math.round(adj.x)}</span>
+                      <span className="text-right text-cyan-300">{Math.round(adj.y)}</span>
+                      <span className="text-right text-green-300">{adj.scale.toFixed(2)}</span>
+                      <span className="text-right text-orange-300">{adj.rotate}°</span>
+                      <div className="flex gap-1 justify-end">
+                        <button
+                          className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                          onClick={e => { e.stopPropagation(); onAdjustScale(slot, 0.05) }}
+                        >
+                          +
+                        </button>
+                        <button
+                          className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                          onClick={e => { e.stopPropagation(); onAdjustScale(slot, -0.05) }}
+                        >
+                          −
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Rotate buttons */}
+                    <div className="mt-1 flex items-center gap-1">
+                      <span className="text-white/40 text-[10px] w-6">ROT</span>
+                      <button
+                        className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                        onClick={e => { e.stopPropagation(); onAdjustRotate(slot, 1) }}
+                      >
+                        ↻
+                      </button>
+                      <button
+                        className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                        onClick={e => { e.stopPropagation(); onAdjustRotate(slot, -1) }}
+                      >
+                        ↺
+                      </button>
+                    </div>
+
+                    {/* Arrow nudge buttons — only for selected slot */}
+                    {isSelected && (
+                      <div className="mt-1.5 flex flex-col items-center gap-0.5">
+                        <button
+                          className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                          onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 0, -1) }}
+                        >
+                          ↑
+                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                            onClick={e => { e.stopPropagation(); onAdjustPosition(slot, -1, 0) }}
+                          >
+                            ←
+                          </button>
+                          <button
+                            className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                            onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 1, 0) }}
+                          >
+                            →
+                          </button>
+                        </div>
+                        <button
+                          className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                          onClick={e => { e.stopPropagation(); onAdjustPosition(slot, 0, 1) }}
+                        >
+                          ↓
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </>
+          )}
         </>
       )}
 
-      {/* ── CLOSET section ──────────────────────────────────────────────────── */}
-      {/* CLOSET section header */}
-      <div
-        onClick={() => setClosetOpen(o => !o)}
-        style={{ cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}
-        className="text-white/70 font-bold text-[10px] uppercase tracking-widest border-t border-white/10 pt-2"
-      >
-        <span>{closetOpen ? '▼' : '▶'}</span>
-        <span>CLOSET</span>
-      </div>
-
-      {closetOpen && (
+      {/* ── CLOSET section ───────────────────────────────────────────────────── */}
+      {debugTarget === 'closet' && (
         <>
-      {/* Column headers */}
-      <div className="grid gap-x-2 text-white/40 mb-1 mt-1" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
-        <span>ID</span>
-        <span className="text-right">X</span>
-        <span className="text-right">Y</span>
-        <span className="text-right">SCALE</span>
-        <span />
-      </div>
-
-      {ITEMS.map(item => {
-        const cadj = closetAdjustments[item.id] ?? { x: 0, y: 0, scale: 1 }
-        return (
-          <div key={item.id} className="rounded px-1 py-0.5 mb-1">
-            <div className="grid gap-x-2 items-center" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
-              <span className="text-white/80 truncate">{item.id}</span>
-              <span className="text-right text-cyan-300">{Math.round(cadj.x)}</span>
-              <span className="text-right text-cyan-300">{Math.round(cadj.y)}</span>
-              <span className="text-right text-green-300">{cadj.scale.toFixed(2)}</span>
-              <div className="flex gap-1 justify-end">
-                <button
-                  className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                  onClick={() => onAdjustClosetItem(item.id, { scale: parseFloat(Math.max(0.1, cadj.scale + 0.05).toFixed(2)) })}
-                >
-                  +
-                </button>
-                <button
-                  className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
-                  onClick={() => onAdjustClosetItem(item.id, { scale: parseFloat(Math.max(0.1, cadj.scale - 0.05).toFixed(2)) })}
-                >
-                  −
-                </button>
-              </div>
-            </div>
-            {/* Arrow nudge */}
-            <div className="mt-1 flex flex-col items-center gap-0.5">
-              <button
-                className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                onClick={() => onAdjustClosetItem(item.id, { y: cadj.y - 1 })}
-              >
-                ↑
-              </button>
-              <div className="flex gap-1">
-                <button
-                  className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                  onClick={() => onAdjustClosetItem(item.id, { x: cadj.x - 1 })}
-                >
-                  ←
-                </button>
-                <button
-                  className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                  onClick={() => onAdjustClosetItem(item.id, { x: cadj.x + 1 })}
-                >
-                  →
-                </button>
-              </div>
-              <button
-                className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
-                onClick={() => onAdjustClosetItem(item.id, { y: cadj.y + 1 })}
-              >
-                ↓
-              </button>
-            </div>
+          {/* Column headers */}
+          <div className="grid gap-x-2 text-white/40 mb-1" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
+            <span>ID</span>
+            <span className="text-right">X</span>
+            <span className="text-right">Y</span>
+            <span className="text-right">SCALE</span>
+            <span />
           </div>
-        )
-      })}
+
+          {ITEMS.map(item => {
+            const cadj = closetAdjustments[item.id] ?? { x: 0, y: 0, scale: 1 }
+            return (
+              <div key={item.id} className="rounded px-1 py-0.5 mb-1">
+                <div className="grid gap-x-2 items-center" style={{ gridTemplateColumns: '72px 36px 36px 44px 60px' }}>
+                  <span className="text-white/80 truncate">{item.id}</span>
+                  <span className="text-right text-cyan-300">{Math.round(cadj.x)}</span>
+                  <span className="text-right text-cyan-300">{Math.round(cadj.y)}</span>
+                  <span className="text-right text-green-300">{cadj.scale.toFixed(2)}</span>
+                  <div className="flex gap-1 justify-end">
+                    <button
+                      className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                      onClick={() => onAdjustClosetItem(item.id, { scale: parseFloat(Math.max(0.1, cadj.scale + 0.05).toFixed(2)) })}
+                    >
+                      +
+                    </button>
+                    <button
+                      className="w-5 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px] leading-none"
+                      onClick={() => onAdjustClosetItem(item.id, { scale: parseFloat(Math.max(0.1, cadj.scale - 0.05).toFixed(2)) })}
+                    >
+                      −
+                    </button>
+                  </div>
+                </div>
+                {/* Arrow nudge */}
+                <div className="mt-1 flex flex-col items-center gap-0.5">
+                  <button
+                    className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                    onClick={() => onAdjustClosetItem(item.id, { y: cadj.y - 1 })}
+                  >
+                    ↑
+                  </button>
+                  <div className="flex gap-1">
+                    <button
+                      className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                      onClick={() => onAdjustClosetItem(item.id, { x: cadj.x - 1 })}
+                    >
+                      ←
+                    </button>
+                    <button
+                      className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                      onClick={() => onAdjustClosetItem(item.id, { x: cadj.x + 1 })}
+                    >
+                      →
+                    </button>
+                  </div>
+                  <button
+                    className="w-6 h-5 bg-white/10 hover:bg-white/20 rounded text-white text-[10px]"
+                    onClick={() => onAdjustClosetItem(item.id, { y: cadj.y + 1 })}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </>
       )}
     </div>
@@ -1170,6 +1237,8 @@ export default function App() {
 
   // ── Debug state ─────────────────────────────────────────────────────────────
   const [debugMode, setDebugMode]       = useState(false)
+  const [debugTarget, setDebugTarget]   = useState<DebugTarget>('layers')
+  const [peteOffset, setPeteOffset]     = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [adjustments, setAdjustments]   = useState<Record<AdjustmentKey, LayerAdjustment>>(DEFAULT_ADJUSTMENTS)
   const [selectedSlot, setSelectedSlot] = useState<AdjustmentKey | null>(null)
   const debugDragRef                    = useRef<DebugDragState | null>(null)
@@ -1458,6 +1527,14 @@ export default function App() {
     }))
   }
 
+  function handleNudgePete(dx: number, dy: number) {
+    setPeteOffset(p => ({ x: p.x + dx, y: p.y + dy }))
+  }
+
+  function handleResetPete() {
+    setPeteOffset({ x: 0, y: 0 })
+  }
+
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
@@ -1506,6 +1583,7 @@ export default function App() {
         draggingId={draggingId}
         hoveredId={hoveredId}
         debugMode={debugMode}
+        debugTarget={debugTarget}
         closetAdjustments={closetAdjustments}
         onPointerDown={startDrag}
         onPointerEnter={id => { if (!drag) setHoveredId(id) }}
@@ -1518,6 +1596,8 @@ export default function App() {
         peteRef={peteRef}
         equipped={equipped}
         debugMode={debugMode}
+        peteOffset={peteOffset}
+        peteDebugActive={debugMode && debugTarget === 'pete'}
         adjustments={adjustments}
         selectedSlot={selectedSlot}
         onSelectSlot={handleSelectSlot}
@@ -1538,11 +1618,16 @@ export default function App() {
           adjustments={adjustments}
           selectedSlot={selectedSlot}
           closetAdjustments={closetAdjustments}
+          peteOffset={peteOffset}
+          debugTarget={debugTarget}
+          onDebugTargetChange={setDebugTarget}
           onAdjustScale={handleAdjustScale}
           onAdjustRotate={handleAdjustRotate}
           onAdjustPosition={handleAdjustPosition}
           onSelectSlot={handleSelectSlot}
           onAdjustClosetItem={handleAdjustClosetItem}
+          onNudgePete={handleNudgePete}
+          onResetPete={handleResetPete}
         />
       )}
 
