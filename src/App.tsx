@@ -1537,12 +1537,20 @@ export default function App() {
 
   function getItemImage(item: ClothingItem, forPete = false): string {
     const hue = itemColors[item.id]
-    if (hue === null || hue === undefined) {
-      return forPete ? item.layer : (item.closetThumbnail ?? item.thumbnail)
-    }
-    const cacheKey = `${item.id}|${hue}|${forPete ? 'layer' : 'thumb'}`
     const base = forPete ? item.layer : (item.closetThumbnail ?? item.thumbnail)
-    return colorizedImages[cacheKey] ?? base
+    if (hue === null || hue === undefined) return base
+
+    const suffix = forPete ? 'layer' : 'thumb'
+    const cacheKey = `${item.id}|${hue}|${suffix}`
+
+    // Return cached result if ready
+    if (colorizedImages[cacheKey]) return colorizedImages[cacheKey]
+
+    // Cache miss — show any OTHER cached color for this item as intermediate (prevents flash to original)
+    const fallbackKey = Object.keys(colorizedImages).find(
+      k => k.startsWith(`${item.id}|`) && k.endsWith(`|${suffix}`)
+    )
+    return fallbackKey ? colorizedImages[fallbackKey] : base
   }
 
   // ── Drag: global pointer events ─────────────────────────────────────────────
@@ -1955,12 +1963,13 @@ export default function App() {
               }
             }}
             style={{
-              position: 'absolute', bottom: '8%', left: '48%',
-              width: 48, height: 48, borderRadius: '50%',
+              position: 'absolute', left: 20, top: '42%',
+              width: 56, height: 56, borderRadius: '50%',
               background: 'none', border: 'none', cursor: hasColorizable ? 'pointer' : 'default',
               padding: 0, zIndex: 15,
               opacity: hasColorizable ? 1 : 0,
               pointerEvents: hasColorizable ? 'auto' : 'none',
+              outline: paletteOpen ? '3px solid white' : 'none',
               filter: paletteOpen
                 ? 'drop-shadow(0 0 8px rgba(255,200,0,0.9))'
                 : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
@@ -1968,7 +1977,7 @@ export default function App() {
             }}
             title="Change color"
           >
-            <img src={paletteIcon} style={{ width: 48, height: 48, objectFit: 'contain' }} alt="palette" />
+            <img src={paletteIcon} style={{ width: 56, height: 56, objectFit: 'contain' }} alt="palette" />
           </button>
         )
       })()}
@@ -1976,7 +1985,7 @@ export default function App() {
       {/* Color picker panel */}
       {paletteOpen && (
         <div style={{
-          position: 'absolute', bottom: '22%', left: '30%',
+          position: 'absolute', left: 84, top: '35%',
           background: 'rgba(10,10,20,0.88)',
           backdropFilter: 'blur(8px)',
           borderRadius: 16, padding: 12,
