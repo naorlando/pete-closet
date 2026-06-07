@@ -381,7 +381,7 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   torso:        { x: 13, y: 6,   scale: 1.10, rotate: 0 },
   body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
   neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
-  head:         { x: 40, y: -42, scale: 1.15, rotate: 0 },
+  head:         { x: 19, y: -59, scale: 1.00, rotate: 0 },
   underbody:    { x: 27, y: -95, scale: 1.00, rotate: 0 },
   hands:        { x: 0, y: 180, scale: 1.0, rotate: 0 },
 }
