@@ -1,0 +1,21 @@
+src/App.tsx
+  s_c8728a075006ef::t_3c4ad56eb7775a 1657
+  s_c8728a075006ef::t_835cc26754be24 1999
+  s_c8728a075006ef::t_737fff4d306302 1681-1685
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.3",
+  "base_commit_sha": "02dd18b9e977463c85c660cb3ce8101f23996e29",
+  "prompts": {},
+  "sessions": {
+    "s_c8728a075006ef": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "c2537c80-afbe-4cc6-825e-299c105ce3f3",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "naorlando <naorlando@frba.utn.edu.ar>"
+    }
+  }
+}
