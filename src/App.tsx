@@ -362,7 +362,7 @@ const ITEMS: ClothingItem[] = [
     layerZ: 9,
     colorizable: true,
     baseHue: 20,
-    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+    defaultAdjustment: { x: 0, y: 0, scale: 2.00, rotate: 0 },
   },
 ]
 
@@ -1659,22 +1659,22 @@ export default function App() {
 
   // Closet item per-item adjustments (position + scale, debug only)
   const [closetAdjustments, setClosetAdjustments] = useState<Record<string, ClosetItemAdjustment>>({
-    'shirt':        { x: -34,  y: -97,  scale: 1.40 },
-    'jeans':        { x: -31,  y: -90,  scale: 0.85 },
-    'pyjamas':      { x: 69,   y: -106, scale: 1.25 },
-    'hat':          { x: -1,   y: 23,   scale: 1.00 },
-    'scarf':        { x: -33,  y: 72,   scale: 1.00 },
-    'trainers':     { x: 17,   y: 12,   scale: 0.65 },
-    'socks':        { x: -336, y: 148,  scale: 1.65 },
-    'cowboy-boots': { x: -34,  y: 14,   scale: 1.15 },
-    'shorts':       { x: -89,  y: -79,  scale: 0.65 },
-    'cap':          { x: 51,   y: 67,   scale: 1.00 },
-    'coat-winter':  { x: 17,   y: -96,  scale: 1.00 },
-    'boxers':       { x: 0,    y: 0,    scale: 1.00 },
-    'gloves':       { x: 0,    y: 0,    scale: 1.00 },
-    'wool-hat':     { x: 0,    y: 0,    scale: 1.00 },
-    'helmet':       { x: 0,    y: 0,    scale: 1.00 },
-    'umbrella':     { x: 0,    y: 0,    scale: 1.00 },
+    'shirt':        { x: -34,   y: -97,  scale: 1.40 },
+    'jeans':        { x: -31,   y: -90,  scale: 0.85 },
+    'pyjamas':      { x: 69,    y: -106, scale: 1.25 },
+    'hat':          { x: -1,    y: 23,   scale: 1.00 },
+    'scarf':        { x: 51,    y: 75,   scale: 1.00 },
+    'trainers':     { x: 17,    y: 12,   scale: 0.65 },
+    'socks':        { x: -336,  y: 148,  scale: 1.65 },
+    'cowboy-boots': { x: -34,   y: 14,   scale: 1.15 },
+    'shorts':       { x: -89,   y: -79,  scale: 0.65 },
+    'cap':          { x: 187,   y: -324, scale: 1.00 },
+    'coat-winter':  { x: 17,    y: -96,  scale: 1.00 },
+    'boxers':       { x: 0,     y: 0,    scale: 1.00 },
+    'gloves':       { x: -363,  y: 357,  scale: 1.00 },
+    'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
+    'helmet':       { x: -214,  y: -323, scale: 1.00 },
+    'umbrella':     { x: -1179, y: 152,  scale: 1.00 },
   })
 
   const peteRef = useRef<HTMLDivElement>(null)
