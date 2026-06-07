@@ -303,14 +303,14 @@ const ITEMS: ClothingItem[] = [
     isWhiteBase: true,
     colorizable: true,
     baseHue: 0,
-    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+    defaultAdjustment: { x: 63, y: -100, scale: 1.00, rotate: 0 },
   },
-  // Gloves — underlayer, torso zone
+  // Gloves — underlayer, feet zone (floor display, no hanger)
   {
     id: 'gloves',
     word: 'GLOVES',
     label: 'blue gloves',
-    slot: SLOT.TORSO,
+    slot: SLOT.FEET,
     layer: layerGloves,
     thumbnail: closetGloves,
     closetThumbnail: closetGloves,
@@ -382,7 +382,7 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
   neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
   head:         { x: 40, y: -42, scale: 1.15, rotate: 0 },
-  underbody:    { x: 0, y: 0, scale: 1, rotate: 0 },
+  underbody:    { x: 63, y: -100, scale: 1.00, rotate: 0 },
   hands:        { x: 0, y: 0, scale: 1, rotate: 0 },
 }
 
@@ -1675,7 +1675,7 @@ export default function App() {
     'gloves':       { x: -363,  y: 357,  scale: 1.00 },
     'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
     'helmet':       { x: -214,  y: -323, scale: 1.00 },
-    'umbrella':     { x: -1179, y: 152,  scale: 1.00 },
+    'umbrella':     { x: -1179, y: 152,  scale: 2.00 },
   })
 
   // Keep closetAdjRef current so handlers always read up-to-date adjustments
