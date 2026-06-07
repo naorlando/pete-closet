@@ -53,8 +53,9 @@ export function colorizeImage(
   targetHue: number,
   baseHue: number,
   tolerance = 38,
+  isWhiteBase = false,
 ): Promise<string> {
-  const key = `${src}|${targetHue}|${baseHue}`
+  const key = `${src}|${targetHue}|${baseHue}|${isWhiteBase ? 'wb' : 'hue'}`
   if (colorizeCache.has(key)) return Promise.resolve(colorizeCache.get(key)!)
 
   return new Promise((resolve) => {
@@ -71,11 +72,21 @@ export function colorizeImage(
       for (let i = 0; i < d.length; i += 4) {
         if (d[i + 3] < 20) continue // skip transparent pixels
         const [h, s, l] = rgbToHsl(d[i], d[i + 1], d[i + 2])
-        if (s > 0.12 && hueDiff(h, baseHue) < tolerance) {
-          const [nr, ng, nb] = hslToRgb(targetHue, s, l)
-          d[i] = nr
-          d[i + 1] = ng
-          d[i + 2] = nb
+        if (isWhiteBase) {
+          // For white items: replace near-white pixels with target color
+          if (s < 0.15 && l > 0.70) {
+            const [nr, ng, nb] = hslToRgb(targetHue, 0.65, Math.max(0.5, l - 0.1))
+            d[i] = nr
+            d[i + 1] = ng
+            d[i + 2] = nb
+          }
+        } else {
+          if (s > 0.12 && hueDiff(h, baseHue) < tolerance) {
+            const [nr, ng, nb] = hslToRgb(targetHue, s, l)
+            d[i] = nr
+            d[i + 1] = ng
+            d[i + 2] = nb
+          }
         }
       }
       ctx.putImageData(imageData, 0, 0)
@@ -94,7 +105,8 @@ export function getCachedColorizedImage(
   src: string,
   targetHue: number,
   baseHue: number,
+  isWhiteBase = false,
 ): string | undefined {
-  const key = `${src}|${targetHue}|${baseHue}`
+  const key = `${src}|${targetHue}|${baseHue}|${isWhiteBase ? 'wb' : 'hue'}`
   return colorizeCache.get(key)
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 
 import roomBg from './assets/room-background.webp'
 
@@ -9,6 +9,7 @@ import { colorizeImage } from './hooks/useColorizedImage'
 import windowSummer from './assets/window-summer.webp'
 import windowAutumn from './assets/window-autumn.webp'
 import windowNight from './assets/window-night.webp'
+import windowRain from './assets/window-rain.webp'
 
 // Season wheel icons
 import leafAutumnIcon from './assets/icons/icon-leaf-autumn.webp'
@@ -17,11 +18,22 @@ import leafAutumnIcon from './assets/icons/icon-leaf-autumn.webp'
 import layerShorts from './assets/layers/layer-shorts.webp'
 import layerCap from './assets/layers/layer-cap.webp'
 import layerCoatWinter from './assets/layers/layer-coat-winter.webp'
+import layerBoxers from './assets/layers/layer-boxers.webp'
+import layerGloves from './assets/layers/layer-gloves.webp'
+import layerWoolHat from './assets/layers/layer-wool-hat.webp'
+import layerHelmet from './assets/layers/layer-helmet.webp'
 
 // New closet thumbnails
 import closetShorts from './assets/thumbnails/closet-shorts.webp'
 import closetCap from './assets/thumbnails/closet-cap.webp'
 import closetCoatWinter from './assets/thumbnails/closet-coat-winter.webp'
+import closetBoxers from './assets/thumbnails/closet-boxers.webp'
+import closetGloves from './assets/thumbnails/closet-gloves.webp'
+import closetWoolHat from './assets/thumbnails/closet-wool-hat.webp'
+import closetHelmet from './assets/thumbnails/closet-helmet.webp'
+
+import layerUmbrella  from './assets/layers/layer-umbrella.webp'
+import closetUmbrella from './assets/thumbnails/closet-umbrella.webp'
 
 // Base Pete — always visible, never changes
 import peteBase from './assets/pete/pete-base.webp'
@@ -82,10 +94,13 @@ interface ClothingItem {
   closetHeight?: string // per-item height override in the closet display
   colorizable?: boolean // supports HSL hue replacement
   baseHue?: number      // dominant color hue (0–360) used for replacement targeting
+  isUnderlayer?: boolean   // if true, goes into equippedUnderlayers, not equipped slots
+  layerZIndex?: number     // fixed z-index for underlayer rendering
+  isWhiteBase?: boolean    // for white items (boxers) — special colorize handling
 }
 
-// AdjustmentKey covers regular slots + split sub-slots
-type AdjustmentKey = SlotId | 'feet-left' | 'feet-right'
+// AdjustmentKey covers regular slots + split sub-slots + underlayer slots
+type AdjustmentKey = SlotId | 'feet-left' | 'feet-right' | 'underbody' | 'hands'
 
 interface DragState {
   item: ClothingItem
@@ -218,7 +233,8 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.07)',
     isShoe: true,
     isSplit: true,
-    layerZ: 1,
+    isUnderlayer: true,
+    layerZIndex: 1,
   },
   {
     id: 'cowboy-boots',
@@ -272,6 +288,82 @@ const ITEMS: ClothingItem[] = [
     defaultAdjustment: { x: 13, y: 32, scale: 1.10, rotate: 0 },
     colorizable: true, baseHue: 150,
   },
+  // Boxers — underlayer, white base, legs zone
+  {
+    id: 'boxers',
+    word: 'BOXERS',
+    label: 'white boxers',
+    slot: SLOT.LEGS,
+    layer: layerBoxers,
+    thumbnail: closetBoxers,
+    closetThumbnail: closetBoxers,
+    closetHeight: 'calc(551px * 0.14)',
+    isUnderlayer: true,
+    layerZIndex: 1,
+    isWhiteBase: true,
+    colorizable: true,
+    baseHue: 0,
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+  },
+  // Gloves — underlayer, torso zone
+  {
+    id: 'gloves',
+    word: 'GLOVES',
+    label: 'blue gloves',
+    slot: SLOT.TORSO,
+    layer: layerGloves,
+    thumbnail: closetGloves,
+    closetThumbnail: closetGloves,
+    closetHeight: 'calc(551px * 0.18)',
+    isUnderlayer: true,
+    layerZIndex: 2,
+    colorizable: true,
+    baseHue: 220,
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+  },
+  // Wool hat — head slot, NOT underlayer
+  {
+    id: 'wool-hat',
+    word: 'WOOLHAT',
+    label: 'a wool hat',
+    slot: SLOT.HEAD,
+    layer: layerWoolHat,
+    thumbnail: closetWoolHat,
+    closetThumbnail: closetWoolHat,
+    closetHeight: 'calc(551px * 0.15)',
+    colorizable: true,
+    baseHue: 140,
+    defaultAdjustment: { x: 0, y: 0, scale: 1.15, rotate: 0 },
+  },
+  // Construction helmet — head slot, NOT underlayer
+  {
+    id: 'helmet',
+    word: 'HELMET',
+    label: 'a hard hat',
+    slot: SLOT.HEAD,
+    layer: layerHelmet,
+    thumbnail: closetHelmet,
+    closetThumbnail: closetHelmet,
+    closetHeight: 'calc(551px * 0.15)',
+    colorizable: true,
+    baseHue: 30,
+    defaultAdjustment: { x: 0, y: 0, scale: 1.15, rotate: 0 },
+  },
+  // Umbrella — head slot, top layer (z:9 above all head items)
+  {
+    id: 'umbrella',
+    word: 'UMBRELLA',
+    label: 'an umbrella',
+    slot: SLOT.HEAD,
+    layer: layerUmbrella,
+    thumbnail: closetUmbrella,
+    closetThumbnail: closetUmbrella,
+    closetHeight: 'calc(551px * 0.22)',
+    layerZ: 9,
+    colorizable: true,
+    baseHue: 20,
+    defaultAdjustment: { x: 0, y: 0, scale: 1, rotate: 0 },
+  },
 ]
 
 // Closet zone grouping by slot
@@ -290,6 +382,8 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
   neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
   head:         { x: 40, y: -42, scale: 1.15, rotate: 0 },
+  underbody:    { x: 0, y: 0, scale: 1, rotate: 0 },
+  hands:        { x: 0, y: 0, scale: 1, rotate: 0 },
 }
 
 // ── Hanger SVG ─────────────────────────────────────────────────────────────────
@@ -565,12 +659,15 @@ function Closet({
 // ── Slot hit zones for unequipping (fractions of Pete's 551px height) ─────────
 
 const SLOT_HIT_ZONES: Record<string, { top: number; height: number }> = {
-  head:  { top: 0,    height: 0.28 },  // hat covers top 28%
-  neck:  { top: 0.22, height: 0.20 },  // scarf covers 22–42%
-  torso: { top: 0.30, height: 0.40 },  // shirt covers 30–70%
-  body:  { top: 0.28, height: 0.65 },  // pyjamas covers 28–93%
-  legs:  { top: 0.55, height: 0.40 },  // jeans covers 55–95%
-  feet:  { top: 0.80, height: 0.20 },  // shoes cover 80–100%
+  head:      { top: 0,    height: 0.28 },  // hat covers top 28%
+  neck:      { top: 0.22, height: 0.20 },  // scarf covers 22–42%
+  torso:     { top: 0.30, height: 0.40 },  // shirt covers 30–70%
+  body:      { top: 0.28, height: 0.65 },  // pyjamas covers 28–93%
+  legs:      { top: 0.55, height: 0.40 },  // jeans covers 55–95%
+  feet:      { top: 0.80, height: 0.20 },  // shoes cover 80–100%
+  underbody: { top: 0.55, height: 0.25 },  // boxers — hip/waist area
+  underfeet: { top: 0.82, height: 0.16 },  // socks — ankle area
+  hands:     { top: 0.60, height: 0.30 },  // gloves — arm area
 }
 
 // ── Pete character: stacked transparent layers ─────────────────────────────────
@@ -578,6 +675,7 @@ const SLOT_HIT_ZONES: Record<string, { top: number; height: number }> = {
 interface PeteProps {
   peteRef: React.RefObject<HTMLDivElement | null>
   equipped: Record<SlotId, string | null>
+  equippedUnderlayers: string[]
   debugMode: boolean
   peteOffset: { x: number; y: number }
   peteDebugActive: boolean
@@ -586,6 +684,7 @@ interface PeteProps {
   onSelectSlot: (slot: AdjustmentKey) => void
   onDebugPointerDown: (slot: AdjustmentKey, e: React.PointerEvent) => void
   onEquippedPointerDown: (item: ClothingItem, e: React.PointerEvent) => void
+  onUnderlayerPointerDown: (item: ClothingItem, e: React.PointerEvent) => void
   onPetePointerDown?: (e: React.PointerEvent<HTMLDivElement>) => void
   onPetePointerMove?: (e: React.PointerEvent<HTMLDivElement>) => void
   onPetePointerUp?: (e: React.PointerEvent<HTMLDivElement>) => void
@@ -595,6 +694,7 @@ interface PeteProps {
 function Pete({
   peteRef,
   equipped,
+  equippedUnderlayers,
   debugMode,
   peteOffset,
   peteDebugActive,
@@ -603,6 +703,7 @@ function Pete({
   onSelectSlot,
   onDebugPointerDown,
   onEquippedPointerDown,
+  onUnderlayerPointerDown,
   onPetePointerDown,
   onPetePointerMove,
   onPetePointerUp,
@@ -651,8 +752,13 @@ function Pete({
   // Map an AdjustmentKey back to the ClothingItem it belongs to
   function itemForKey(key: AdjustmentKey): ClothingItem | null {
     // feet-left and feet-right both belong to the feet slot item
-    const slotId = key === 'feet-left' || key === 'feet-right' ? SLOT.FEET : key as SlotId
-    const itemId = equipped[slotId]
+    if (key === 'feet-left' || key === 'feet-right') {
+      const itemId = equipped[SLOT.FEET]
+      return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
+    }
+    // underbody/hands are underlayer adjustment keys, not slot IDs
+    if (key === 'underbody' || key === 'hands') return null
+    const itemId = equipped[key as SlotId]
     return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
   }
 
@@ -697,6 +803,46 @@ function Pete({
           className="h-full w-auto object-contain drop-shadow-2xl"
           draggable={false}
         />
+
+        {/* Underlayer items — render at low z-index, always below outer clothing */}
+        {ITEMS.filter(i => i.isUnderlayer && equippedUnderlayers.includes(i.id)).map(item => {
+          const zIdx = item.layerZIndex ?? 1
+          if (item.isSplit) {
+            // Socks split rendering (left/right)
+            return (
+              <Fragment key={item.id}>
+                <img
+                  src={layerSocksLeft}
+                  alt=""
+                  className="absolute inset-0 h-full w-auto object-contain"
+                  style={buildLayerStyle(zIdx, 'feet-left')}
+                  draggable={false}
+                />
+                <img
+                  src={layerSocksRight}
+                  alt=""
+                  className="absolute inset-0 h-full w-auto object-contain"
+                  style={buildLayerStyle(zIdx, 'feet-right')}
+                  draggable={false}
+                />
+              </Fragment>
+            )
+          }
+          // Determine which adjustment key to use for underlayer
+          const adjKey: AdjustmentKey = item.id === 'boxers' ? 'underbody'
+            : item.id === 'gloves' ? 'hands'
+            : (item.slot as AdjustmentKey)
+          return (
+            <img
+              key={item.id}
+              src={getItemImage(item, true)}
+              alt=""
+              className="absolute inset-0 h-full w-auto object-contain"
+              style={buildLayerStyle(zIdx, adjKey)}
+              draggable={false}
+            />
+          )
+        })}
 
         {/* z=2 — Legs layer (jeans / fish-trousers) */}
         {equippedLegs && (
@@ -782,14 +928,14 @@ function Pete({
           />
         )}
 
-        {/* z=7 — Head layer (hat), always on top of everything */}
+        {/* z=8 (or layerZ) — Head layer (hat), top of everything; umbrella uses layerZ:9 */}
         {equippedHead && (
           <img
             key={equippedHead.id}
             src={getItemImage(equippedHead, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
-            style={buildLayerStyle(7, SLOT.HEAD)}
+            style={buildLayerStyle(equippedHead.layerZ ?? 8, SLOT.HEAD)}
             draggable={false}
             onPointerDown={e => handleLayerPointerDown(SLOT.HEAD, e)}
           />
@@ -819,6 +965,40 @@ function Pete({
                 e.preventDefault();
                 e.stopPropagation();
                 onEquippedPointerDown(item, e);
+              }}
+            />
+          );
+        })}
+
+        {/* Hit zones for underlayer items — drag off Pete to unequip */}
+        {!debugMode && equippedUnderlayers.map(itemId => {
+          const item = ITEMS.find(i => i.id === itemId);
+          if (!item) return null;
+          // Determine which hit zone to use for this underlayer
+          const zoneKey = item.id === 'boxers' ? 'underbody'
+            : item.id === 'socks' ? 'underfeet'
+            : item.id === 'gloves' ? 'hands'
+            : null;
+          if (!zoneKey) return null;
+          const zone = SLOT_HIT_ZONES[zoneKey];
+          if (!zone) return null;
+          return (
+            <div
+              key={`underlayer-${itemId}`}
+              style={{
+                position: 'absolute',
+                left: '10%',
+                width: '80%',
+                top: `${zone.top * 100}%`,
+                height: `${zone.height * 100}%`,
+                cursor: 'grab',
+                zIndex: 10,
+                // Uncomment to debug: background: 'rgba(0,255,0,0.2)',
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onUnderlayerPointerDown(item, e);
               }}
             />
           );
@@ -1234,7 +1414,7 @@ function DebugPanel({
 
 // ── Season ─────────────────────────────────────────────────────────────────────
 
-type Season = 'summer' | 'autumn' | 'night'
+type Season = 'summer' | 'autumn' | 'night' | 'rain'
 
 // ─── SVG helpers ──────────────────────────────────────────────
 function polarToXY(cx: number, cy: number, r: number, angleDeg: number) {
@@ -1297,6 +1477,23 @@ function MoonIcon({ size = 22 }: { size?: number }) {
   )
 }
 
+// Rain — cloud with drops
+function RainIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      {/* Cloud */}
+      <ellipse cx="16" cy="12" rx="9" ry="6" fill="#8AAAD8"/>
+      <ellipse cx="10" cy="14" rx="5" ry="4" fill="#8AAAD8"/>
+      <ellipse cx="22" cy="14" rx="5" ry="4" fill="#8AAAD8"/>
+      <ellipse cx="16" cy="16" rx="9" ry="4" fill="#6080C0"/>
+      {/* Rain drops */}
+      <line x1="10" y1="22" x2="8"  y2="28" stroke="#5080CC" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="16" y1="22" x2="14" y2="28" stroke="#5080CC" strokeWidth="2" strokeLinecap="round"/>
+      <line x1="22" y1="22" x2="20" y2="28" stroke="#5080CC" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  )
+}
+
 // Leaf — uses the real autumn leaf PNG
 function LeafIcon({ size = 22 }: { size?: number }) {
   return <img src={leafAutumnIcon} width={size} height={size} style={{ objectFit: 'contain', display: 'block' }} />
@@ -1307,17 +1504,19 @@ const SEASON_COLORS: Record<Season, string> = {
   summer: '#FFB800',
   autumn: '#E2580A',
   night:  '#7AAAFF',
+  rain:   '#6090CC',
 }
 
 // ─── Half-donut wheel ─────────────────────────────────────────
 // Half-donut: spans from -90° (left) to 90° (right) passing through 0° (top)
-// 3 sectors × 60° each
+// 4 sectors × 45° each
 const SECTOR_RANGES: Record<Season, [number, number]> = {
-  autumn: [-90, -30],   // left sector
-  summer: [-30,  30],   // center sector (top)
-  night:  [ 30,  90],   // right sector
+  autumn: [-90, -45],
+  summer: [-45,   0],
+  night:  [  0,  45],
+  rain:   [ 45,  90],
 }
-// Icons at sector midpoints: autumn=-60°, summer=0°, night=60°
+// Icons at sector midpoints: autumn=-67.5°, summer=-22.5°, night=22.5°, rain=67.5°
 
 function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Season) => void }) {
   const R = 52       // outer radius
@@ -1367,6 +1566,7 @@ function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Seaso
                 }}>
                   {s === 'summer' ? <SunIcon size={20}/>
                     : s === 'autumn' ? <LeafIcon size={20}/>
+                    : s === 'rain' ? <RainIcon size={20}/>
                     : <MoonIcon size={20}/>}
                 </div>
               </foreignObject>
@@ -1384,6 +1584,7 @@ function SeasonWheel({ season, onSelect }: { season: Season; onSelect: (s: Seaso
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 20, height: 20 }}>
             {season === 'summer' ? <SunIcon size={16}/>
               : season === 'autumn' ? <LeafIcon size={16}/>
+              : season === 'rain' ? <RainIcon size={16}/>
               : <MoonIcon size={16}/>}
           </div>
         </foreignObject>
@@ -1396,6 +1597,7 @@ const WINDOW_SRC: Record<Season, string> = {
   summer: windowSummer,
   autumn: windowAutumn,
   night:  windowNight,
+  rain:   windowRain,
 }
 
 // ── Game scale hook ────────────────────────────────────────────────────────────
@@ -1437,6 +1639,7 @@ export default function App() {
   const canvasRef = useRef<HTMLDivElement>(null)
 
   const [equipped, setEquipped]       = useState<Record<SlotId, string | null>>(EMPTY_EQUIPPED)
+  const [equippedUnderlayers, setEquippedUnderlayers] = useState<string[]>([])
   const [drag, setDrag]               = useState<DragState | null>(null)
   const [lastWord, setLastWord]       = useState<VocabWord | null>(null)
   const [hoveredId, setHoveredId]     = useState<string | undefined>(undefined)
@@ -1467,6 +1670,11 @@ export default function App() {
     'shorts':       { x: -89,  y: -79,  scale: 0.65 },
     'cap':          { x: 51,   y: 67,   scale: 1.00 },
     'coat-winter':  { x: 17,   y: -96,  scale: 1.00 },
+    'boxers':       { x: 0,    y: 0,    scale: 1.00 },
+    'gloves':       { x: 0,    y: 0,    scale: 1.00 },
+    'wool-hat':     { x: 0,    y: 0,    scale: 1.00 },
+    'helmet':       { x: 0,    y: 0,    scale: 1.00 },
+    'umbrella':     { x: 0,    y: 0,    scale: 1.00 },
   })
 
   const peteRef = useRef<HTMLDivElement>(null)
@@ -1487,17 +1695,22 @@ export default function App() {
     const srcs = [peteBase, peteNoArms, peteNoFeet, peteNoArmsNoFeet, roomBg,
       layerShirt, layerJeans, layerPyjamas, layerHat, layerScarf,
       layerTrainers, layerCowboyBoots, layerSocks, layerSocksLeft, layerSocksRight,
-      windowSummer, windowAutumn, windowNight,
-      layerShorts, layerCap, layerCoatWinter]
+      windowSummer, windowAutumn, windowNight, windowRain,
+      layerShorts, layerCap, layerCoatWinter,
+      layerBoxers, layerGloves, layerWoolHat, layerHelmet, layerUmbrella]
     srcs.forEach(src => { const img = new window.Image(); img.src = src })
   }, []);
 
   // ── Palette: auto-close / reset colorTarget when equipped items change ───────
 
   useEffect(() => {
-    const equippedColorizable = Object.values(equipped).filter(
+    const slotColorizable = Object.values(equipped).filter(
       id => id && ITEMS.find(i => i.id === id)?.colorizable
+    ) as string[]
+    const underlayerColorizable = equippedUnderlayers.filter(
+      id => ITEMS.find(i => i.id === id)?.colorizable
     )
+    const equippedColorizable = [...slotColorizable, ...underlayerColorizable]
     if (equippedColorizable.length === 0) {
       setPaletteOpen(false)
       setColorTarget(null)
@@ -1507,7 +1720,7 @@ export default function App() {
     if (colorTarget && !equippedColorizable.includes(colorTarget)) {
       setColorTarget(equippedColorizable[0] ?? null)
     }
-  }, [equipped, colorTarget])
+  }, [equipped, equippedUnderlayers, colorTarget])
 
   // ── Colorization: trigger canvas HSL replacement when itemColors changes ────
 
@@ -1525,7 +1738,7 @@ export default function App() {
       sources.forEach(({ src, cacheKey }) => {
         setColorizedImages(prev => {
           if (prev[cacheKey]) return prev // already cached, skip
-          colorizeImage(src, hue, item.baseHue!, 38).then(dataUrl => {
+          colorizeImage(src, hue, item.baseHue!, 38, item.isWhiteBase ?? false).then(dataUrl => {
             setColorizedImages(p => ({ ...p, [cacheKey]: dataUrl }))
           })
           return prev
@@ -1600,18 +1813,33 @@ export default function App() {
             e.clientY <= rect.bottom + 20
 
           if (onPete && !current.wasEquipped) {
-            // New item dropped onto Pete → equip
-            setEquipped(eq => ({ ...eq, [current.item.slot]: current.item.id }))
-            setLastWord({ word: current.item.word, label: current.item.label })
-            if (current.item.defaultAdjustment) {
-              setAdjustments(prev => ({
-                ...prev,
-                [current.item.slot]: { ...DEFAULT_ADJUSTMENT, ...current.item.defaultAdjustment },
-              }))
+            if (current.item.isUnderlayer) {
+              // Underlayer item dropped onto Pete → toggle underlayer
+              setEquippedUnderlayers(prev =>
+                prev.includes(current.item.id)
+                  ? prev.filter(id => id !== current.item.id)
+                  : [...prev, current.item.id]
+              )
+            } else {
+              // Normal slot item dropped onto Pete → equip in slot
+              setEquipped(eq => ({ ...eq, [current.item.slot]: current.item.id }))
+              if (current.item.defaultAdjustment) {
+                const adjKey: AdjustmentKey = current.item.slot
+                setAdjustments(prev => ({
+                  ...prev,
+                  [adjKey]: { ...DEFAULT_ADJUSTMENT, ...current.item.defaultAdjustment },
+                }))
+              }
             }
+            setLastWord({ word: current.item.word, label: current.item.label })
           } else if (!onPete && current.wasEquipped) {
-            // Equipped item dragged away from Pete → unequip
-            setEquipped(eq => ({ ...eq, [current.item.slot]: null }))
+            if (current.item.isUnderlayer) {
+              // Underlayer item dragged away from Pete → remove from underlayers
+              setEquippedUnderlayers(prev => prev.filter(id => id !== current.item.id))
+            } else {
+              // Equipped slot item dragged away from Pete → unequip
+              setEquipped(eq => ({ ...eq, [current.item.slot]: null }))
+            }
           }
           // onPete && wasEquipped → dropped back on Pete, keep equipped (no-op)
         }
@@ -1710,7 +1938,10 @@ export default function App() {
 
   // ── Derived state ───────────────────────────────────────────────────────────
 
-  const equippedIds = new Set(Object.values(equipped).filter((v): v is string => v !== null))
+  const equippedIds = new Set([
+    ...Object.values(equipped).filter((v): v is string => v !== null),
+    ...equippedUnderlayers,
+  ])
   const draggingId  = drag?.item.id
 
   function clientToCanvas(clientX: number, clientY: number) {
@@ -1732,6 +1963,17 @@ export default function App() {
     const { x, y } = clientToCanvas(e.clientX, e.clientY)
     dragVelocityRef.current = { prevClientX: e.clientX, prevTime: Date.now() }
     setDrag({ item, x, y, wasEquipped: isEquipped, rotation: 0 })
+  }
+
+  function startUnderlayerDrag(item: ClothingItem, e: React.PointerEvent) {
+    // Called when the user grabs an underlayer item from Pete's body hit zone
+    if (debugMode) return
+    e.preventDefault()
+    e.stopPropagation()
+    setHoveredId(undefined)
+    const { x, y } = clientToCanvas(e.clientX, e.clientY)
+    dragVelocityRef.current = { prevClientX: e.clientX, prevTime: Date.now() }
+    setDrag({ item, x, y, wasEquipped: true, rotation: 0 })
   }
 
   function startEquippedDrag(item: ClothingItem, e: React.PointerEvent) {
@@ -1927,6 +2169,7 @@ export default function App() {
       <Pete
         peteRef={peteRef}
         equipped={equipped}
+        equippedUnderlayers={equippedUnderlayers}
         debugMode={debugMode}
         peteOffset={peteOffset}
         peteDebugActive={debugMode && debugTarget === 'pete'}
@@ -1935,6 +2178,7 @@ export default function App() {
         onSelectSlot={handleSelectSlot}
         onDebugPointerDown={handleDebugPointerDown}
         onEquippedPointerDown={startEquippedDrag}
+        onUnderlayerPointerDown={startUnderlayerDrag}
         onPetePointerDown={handlePetePointerDown}
         onPetePointerMove={handlePetePointerMove}
         onPetePointerUp={handlePetePointerUp}
@@ -1949,9 +2193,9 @@ export default function App() {
 
       {/* Palette button — fades in/out when colorizable items are equipped */}
       {(() => {
-        const hasColorizable = Object.entries(equipped).some(
-          ([, id]) => id && ITEMS.find(i => i.id === id)?.colorizable
-        )
+        const hasColorizable =
+          Object.values(equipped).some(id => id && ITEMS.find(i => i.id === id)?.colorizable) ||
+          equippedUnderlayers.some(id => ITEMS.find(i => i.id === id)?.colorizable)
         return (
           <button
             onClick={() => {
@@ -1959,7 +2203,9 @@ export default function App() {
               const newOpen = !paletteOpen
               setPaletteOpen(newOpen)
               if (newOpen && !colorTarget) {
-                const firstColorizable = Object.values(equipped).find(id => id && ITEMS.find(i => i.id === id)?.colorizable)
+                const firstColorizable =
+                  Object.values(equipped).find(id => id && ITEMS.find(i => i.id === id)?.colorizable) ??
+                  equippedUnderlayers.find(id => ITEMS.find(i => i.id === id)?.colorizable)
                 if (firstColorizable) setColorTarget(firstColorizable)
               }
             }}
@@ -2002,8 +2248,10 @@ export default function App() {
         }}>
           {/* Item selector — scrollable row */}
           <div style={{ display: 'flex', gap: 5, marginBottom: 8, flexWrap: 'wrap' }}>
-            {Object.values(equipped)
-              .filter((id): id is string => !!id && !!ITEMS.find(i => i.id === id)?.colorizable)
+            {[
+              ...Object.values(equipped).filter((id): id is string => !!id && !!ITEMS.find(i => i.id === id)?.colorizable),
+              ...equippedUnderlayers.filter(id => ITEMS.find(i => i.id === id)?.colorizable),
+            ]
               .map(id => {
                 const item = ITEMS.find(i => i.id === id)!
                 return (
