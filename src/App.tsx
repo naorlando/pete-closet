@@ -382,8 +382,8 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
   neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
   head:         { x: 40, y: -42, scale: 1.15, rotate: 0 },
-  underbody:    { x: 63, y: -100, scale: 1.00, rotate: 0 },
-  hands:        { x: 0, y: 0, scale: 1, rotate: 0 },
+  underbody:    { x: 27, y: -95, scale: 1.00, rotate: 0 },
+  hands:        { x: 0, y: 180, scale: 1.0, rotate: 0 },
 }
 
 // ── Hanger SVG ─────────────────────────────────────────────────────────────────
@@ -751,13 +751,24 @@ function Pete({
 
   // Map an AdjustmentKey back to the ClothingItem it belongs to
   function itemForKey(key: AdjustmentKey): ClothingItem | null {
-    // feet-left and feet-right both belong to the feet slot item
+    // feet-left and feet-right belong to the feet slot item OR to socks as an underlayer
     if (key === 'feet-left' || key === 'feet-right') {
       const itemId = equipped[SLOT.FEET]
-      return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
+      if (itemId) return ITEMS.find(i => i.id === itemId) ?? null
+      // socks is an underlayer that uses feet-left/feet-right — check equippedUnderlayers
+      const socksEquipped = equippedUnderlayers.includes('socks')
+      return socksEquipped ? (ITEMS.find(i => i.id === 'socks') ?? null) : null
     }
-    // underbody/hands are underlayer adjustment keys, not slot IDs
-    if (key === 'underbody' || key === 'hands') return null
+    // underbody → boxers underlayer
+    if (key === 'underbody') {
+      const boxersEquipped = equippedUnderlayers.includes('boxers')
+      return boxersEquipped ? (ITEMS.find(i => i.id === 'boxers') ?? null) : null
+    }
+    // hands → gloves underlayer
+    if (key === 'hands') {
+      const glovesEquipped = equippedUnderlayers.includes('gloves')
+      return glovesEquipped ? (ITEMS.find(i => i.id === 'gloves') ?? null) : null
+    }
     const itemId = equipped[key as SlotId]
     return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
   }
@@ -817,6 +828,7 @@ function Pete({
                   className="absolute inset-0 h-full w-auto object-contain"
                   style={buildLayerStyle(zIdx, 'feet-left')}
                   draggable={false}
+                  onPointerDown={e => handleLayerPointerDown('feet-left', e)}
                 />
                 <img
                   src={layerSocksRight}
@@ -824,6 +836,7 @@ function Pete({
                   className="absolute inset-0 h-full w-auto object-contain"
                   style={buildLayerStyle(zIdx, 'feet-right')}
                   draggable={false}
+                  onPointerDown={e => handleLayerPointerDown('feet-right', e)}
                 />
               </Fragment>
             )
@@ -840,6 +853,7 @@ function Pete({
               className="absolute inset-0 h-full w-auto object-contain"
               style={buildLayerStyle(zIdx, adjKey)}
               draggable={false}
+              onPointerDown={e => handleLayerPointerDown(adjKey, e)}
             />
           )
         })}
@@ -1077,6 +1091,7 @@ function VocabBadge({ word }: VocabBadgeProps) {
 
 interface DebugPanelProps {
   equipped: Record<SlotId, string | null>
+  equippedUnderlayers: string[]
   adjustments: Record<AdjustmentKey, LayerAdjustment>
   selectedSlot: AdjustmentKey | null
   closetAdjustments: Record<string, ClosetItemAdjustment>
@@ -1101,6 +1116,7 @@ const DEBUG_TAB_STYLE_BASE: React.CSSProperties = {
 
 function DebugPanel({
   equipped,
+  equippedUnderlayers,
   adjustments,
   selectedSlot,
   closetAdjustments,
@@ -1118,12 +1134,23 @@ function DebugPanel({
   const equippedFeetItem = equipped.feet ? ITEMS.find(i => i.id === equipped.feet) : null
   const feetIsSplit = equippedFeetItem?.isSplit ?? false
 
-  // Build the list of adjustment keys to show in the layers panel
-  const equippedKeys: AdjustmentKey[] = SLOT_ORDER.flatMap(slot => {
-    if (equipped[slot] === null) return []
-    if (slot === SLOT.FEET && feetIsSplit) return ['feet-left', 'feet-right']
-    return [slot]
-  })
+  // Build the list of adjustment keys to show in the layers panel.
+  // Includes both normal slot items and underlayer items (socks, boxers, gloves).
+  const equippedKeys: AdjustmentKey[] = [
+    // Normal slot items
+    ...SLOT_ORDER.flatMap(slot => {
+      if (equipped[slot] === null) return []
+      if (slot === SLOT.FEET && feetIsSplit) return ['feet-left', 'feet-right'] as AdjustmentKey[]
+      return [slot as AdjustmentKey]
+    }),
+    // Underlayer items — map each to its adjustment key
+    ...ITEMS.filter(i => i.isUnderlayer && equippedUnderlayers.includes(i.id)).flatMap(item => {
+      if (item.isSplit) return ['feet-left', 'feet-right'] as AdjustmentKey[]
+      if (item.id === 'boxers') return ['underbody'] as AdjustmentKey[]
+      if (item.id === 'gloves') return ['hands'] as AdjustmentKey[]
+      return [(item.slot as AdjustmentKey)]
+    }),
+  ]
 
   return (
     <div
@@ -2329,6 +2356,7 @@ export default function App() {
       {debugMode && (
         <DebugPanel
           equipped={equipped}
+          equippedUnderlayers={equippedUnderlayers}
           adjustments={adjustments}
           selectedSlot={selectedSlot}
           closetAdjustments={closetAdjustments}
