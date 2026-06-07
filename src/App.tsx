@@ -1654,6 +1654,7 @@ export default function App() {
   const debugDragRef                    = useRef<DebugDragState | null>(null)
 
   const closetAdjDragRef = useRef<ClosetAdjDragState | null>(null)
+  const closetAdjRef = useRef(closetAdjustments)
   const peteDragRef = useRef<{ startX: number; startY: number; startPeteX: number; startPeteY: number } | null>(null)
   const dragVelocityRef = useRef<{ prevClientX: number; prevTime: number } | null>(null)
 
@@ -1676,6 +1677,11 @@ export default function App() {
     'helmet':       { x: -214,  y: -323, scale: 1.00 },
     'umbrella':     { x: -1179, y: 152,  scale: 1.00 },
   })
+
+  // Keep closetAdjRef current so handlers always read up-to-date adjustments
+  useEffect(() => {
+    closetAdjRef.current = closetAdjustments
+  }, [closetAdjustments])
 
   const peteRef = useRef<HTMLDivElement>(null)
 
@@ -1990,7 +1996,7 @@ export default function App() {
   function handleClosetAdjPointerDown(id: string, e: React.PointerEvent) {
     e.preventDefault()
     e.stopPropagation()
-    const current = closetAdjustments[id] ?? { x: 0, y: 0, scale: 1 }
+    const current = closetAdjRef.current[id] ?? { x: 0, y: 0, scale: 1 }
     const { x, y } = clientToCanvas(e.clientX, e.clientY)
     closetAdjDragRef.current = {
       id,
