@@ -1654,7 +1654,7 @@ export default function App() {
   const debugDragRef                    = useRef<DebugDragState | null>(null)
 
   const closetAdjDragRef = useRef<ClosetAdjDragState | null>(null)
-  const closetAdjRef = useRef(closetAdjustments)
+  const closetAdjRef = useRef<Record<string, ClosetItemAdjustment>>({})
   const peteDragRef = useRef<{ startX: number; startY: number; startPeteX: number; startPeteY: number } | null>(null)
   const dragVelocityRef = useRef<{ prevClientX: number; prevTime: number } | null>(null)
 
