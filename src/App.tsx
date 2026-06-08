@@ -20,6 +20,8 @@ import layerCap from './assets/layers/layer-cap.webp'
 import layerCoatWinter from './assets/layers/layer-coat-winter.webp'
 import layerBoxers from './assets/layers/layer-boxers.webp'
 import layerGloves from './assets/layers/layer-gloves.webp'
+import layerGlovesLeft from './assets/layers/layer-gloves-left.webp'
+import layerGlovesRight from './assets/layers/layer-gloves-right.webp'
 import layerWoolHat from './assets/layers/layer-wool-hat.webp'
 import layerHelmet from './assets/layers/layer-helmet.webp'
 
@@ -100,7 +102,7 @@ interface ClothingItem {
 }
 
 // AdjustmentKey covers regular slots + split sub-slots + underlayer slots
-type AdjustmentKey = SlotId | 'feet-left' | 'feet-right' | 'underbody' | 'hands' | 'umbrella'
+type AdjustmentKey = SlotId | 'feet-left' | 'feet-right' | 'underbody' | 'hands' | 'hands-left' | 'hands-right' | 'umbrella' | 'wool-hat' | 'helmet'
 
 interface DragState {
   item: ClothingItem
@@ -305,7 +307,7 @@ const ITEMS: ClothingItem[] = [
     baseHue: 0,
     defaultAdjustment: { x: 63, y: -100, scale: 1.00, rotate: 0 },
   },
-  // Gloves — underlayer, feet zone (floor display, no hanger)
+  // Gloves — underlayer, split left/right (like socks)
   {
     id: 'gloves',
     word: 'GLOVES',
@@ -316,6 +318,7 @@ const ITEMS: ClothingItem[] = [
     closetThumbnail: closetGloves,
     closetHeight: 'calc(551px * 0.18)',
     isUnderlayer: true,
+    isSplit: true,
     layerZIndex: 2,
     colorizable: true,
     baseHue: 220,
@@ -333,7 +336,7 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.15)',
     colorizable: true,
     baseHue: 140,
-    defaultAdjustment: { x: 0, y: 0, scale: 1.15, rotate: 0 },
+    defaultAdjustment: { x: 16, y: -64, scale: 0.95, rotate: 0 },
   },
   // Construction helmet — head slot, NOT underlayer
   {
@@ -347,9 +350,9 @@ const ITEMS: ClothingItem[] = [
     closetHeight: 'calc(551px * 0.15)',
     colorizable: true,
     baseHue: 30,
-    defaultAdjustment: { x: 0, y: 0, scale: 1.15, rotate: 0 },
+    defaultAdjustment: { x: 16, y: -52, scale: 1.00, rotate: 0 },
   },
-  // Umbrella — head slot, top layer (z:9 above all head items)
+  // Umbrella — underlayer, top layer (z:9 above all clothing)
   {
     id: 'umbrella',
     word: 'UMBRELLA',
@@ -359,7 +362,8 @@ const ITEMS: ClothingItem[] = [
     thumbnail: closetUmbrella,
     closetThumbnail: closetUmbrella,
     closetHeight: 'calc(551px * 0.22)',
-    layerZ: 9,
+    isUnderlayer: true,
+    layerZIndex: 9,
     colorizable: true,
     baseHue: 20,
     defaultAdjustment: { x: 46, y: 230, scale: 0.70, rotate: -11 },
@@ -374,17 +378,21 @@ const BOTTOM_BOX_ITEMS  = ITEMS.filter(i => i.slot === SLOT.FEET)
 const DEFAULT_ADJUSTMENT: LayerAdjustment = { x: 0, y: 0, scale: 1, rotate: 0 }
 
 const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
-  feet:         { x: 2, y: 5, scale: 1.10, rotate: 0 },
-  'feet-left':  { x: 5, y: 64, scale: 0.85, rotate: 0 },
-  'feet-right': { x: -1, y: 64, scale: 0.85, rotate: 0 },
-  legs:         { x: 4,  y: 55,  scale: 0.85, rotate: 0 },
-  torso:        { x: 13, y: 6,   scale: 1.10, rotate: 0 },
-  body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
-  neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
-  head:         { x: 19, y: -59, scale: 1.00, rotate: 0 },
-  underbody:    { x: 9, y: 19, scale: 1.05, rotate: 0 },
-  hands:        { x: 0, y: 180, scale: 1.0, rotate: 0 },
-  umbrella:     { x: 46, y: 230, scale: 0.70, rotate: -11 },
+  feet:          { x: 2, y: 5, scale: 1.10, rotate: 0 },
+  'feet-left':   { x: 5, y: 64, scale: 0.85, rotate: 0 },
+  'feet-right':  { x: -1, y: 64, scale: 0.85, rotate: 0 },
+  legs:          { x: 4,  y: 55,  scale: 0.85, rotate: 0 },
+  torso:         { x: 13, y: 6,   scale: 1.10, rotate: 0 },
+  body:          { x: 12, y: 11,  scale: 1.00, rotate: 0 },
+  neck:          { x: -16, y: 22, scale: 1.15, rotate: 0 },
+  head:          { x: 19, y: -59, scale: 1.00, rotate: 0 },
+  underbody:     { x: 9, y: 19, scale: 1.05, rotate: 0 },
+  hands:         { x: 0, y: 180, scale: 1.0, rotate: 0 },
+  'hands-left':  { x: -80, y: 180, scale: 1.0, rotate: 0 },
+  'hands-right': { x: 80, y: 180, scale: 1.0, rotate: 0 },
+  umbrella:      { x: 46, y: 230, scale: 0.70, rotate: -11 },
+  'wool-hat':    { x: 16, y: -64, scale: 0.95, rotate: 0 },
+  'helmet':      { x: 16, y: -52, scale: 1.00, rotate: 0 },
 }
 
 // ── Hanger SVG ─────────────────────────────────────────────────────────────────
@@ -765,15 +773,20 @@ function Pete({
       const boxersEquipped = equippedUnderlayers.includes('boxers')
       return boxersEquipped ? (ITEMS.find(i => i.id === 'boxers') ?? null) : null
     }
-    // hands → gloves underlayer
-    if (key === 'hands') {
+    // hands / hands-left / hands-right → gloves underlayer
+    if (key === 'hands' || key === 'hands-left' || key === 'hands-right') {
       const glovesEquipped = equippedUnderlayers.includes('gloves')
       return glovesEquipped ? (ITEMS.find(i => i.id === 'gloves') ?? null) : null
     }
-    // umbrella → head slot item (only when umbrella is equipped)
+    // umbrella → underlayer (no longer a head slot item)
     if (key === 'umbrella') {
+      const umbrellaEquipped = equippedUnderlayers.includes('umbrella')
+      return umbrellaEquipped ? (ITEMS.find(i => i.id === 'umbrella') ?? null) : null
+    }
+    // wool-hat / helmet → head slot item when matching id equipped
+    if (key === 'wool-hat' || key === 'helmet') {
       const headId = equipped[SLOT.HEAD]
-      return headId === 'umbrella' ? (ITEMS.find(i => i.id === 'umbrella') ?? null) : null
+      return headId === key ? (ITEMS.find(i => i.id === key) ?? null) : null
     }
     const itemId = equipped[key as SlotId]
     return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
@@ -824,7 +837,7 @@ function Pete({
         {/* Underlayer items — render at low z-index, always below outer clothing */}
         {ITEMS.filter(i => i.isUnderlayer && equippedUnderlayers.includes(i.id)).map(item => {
           const zIdx = item.layerZIndex ?? 1
-          if (item.isSplit) {
+          if (item.isSplit && item.id === 'socks') {
             // Socks split rendering (left/right)
             return (
               <Fragment key={item.id}>
@@ -847,9 +860,45 @@ function Pete({
               </Fragment>
             )
           }
+          if (item.isSplit && item.id === 'gloves') {
+            // Gloves split rendering (left/right)
+            return (
+              <Fragment key={item.id}>
+                <img
+                  src={layerGlovesLeft}
+                  alt=""
+                  className="absolute inset-0 h-full w-auto object-contain"
+                  style={buildLayerStyle(zIdx, 'hands-left')}
+                  draggable={false}
+                  onPointerDown={e => handleLayerPointerDown('hands-left', e)}
+                />
+                <img
+                  src={layerGlovesRight}
+                  alt=""
+                  className="absolute inset-0 h-full w-auto object-contain"
+                  style={buildLayerStyle(zIdx, 'hands-right')}
+                  draggable={false}
+                  onPointerDown={e => handleLayerPointerDown('hands-right', e)}
+                />
+              </Fragment>
+            )
+          }
+          if (item.id === 'umbrella') {
+            // Umbrella: single image using its own adjustment key
+            return (
+              <img
+                key="umbrella"
+                src={getItemImage(item, true)}
+                alt=""
+                className="absolute inset-0 h-full w-auto object-contain"
+                style={buildLayerStyle(zIdx, 'umbrella')}
+                draggable={false}
+                onPointerDown={e => handleLayerPointerDown('umbrella', e)}
+              />
+            )
+          }
           // Determine which adjustment key to use for underlayer
           const adjKey: AdjustmentKey = item.id === 'boxers' ? 'underbody'
-            : item.id === 'gloves' ? 'hands'
             : (item.slot as AdjustmentKey)
           return (
             <img
@@ -948,18 +997,23 @@ function Pete({
           />
         )}
 
-        {/* z=8 (or layerZ) — Head layer (hat), top of everything; umbrella uses layerZ:9 + own key */}
-        {equippedHead && (
-          <img
-            key={equippedHead.id}
-            src={getItemImage(equippedHead, true)}
-            alt=""
-            className="absolute inset-0 h-full w-auto object-contain"
-            style={buildLayerStyle(equippedHead.layerZ ?? 8, equippedHead.id === 'umbrella' ? 'umbrella' : SLOT.HEAD)}
-            draggable={false}
-            onPointerDown={e => handleLayerPointerDown(equippedHead.id === 'umbrella' ? 'umbrella' : SLOT.HEAD, e)}
-          />
-        )}
+        {/* z=8 — Head layer (hat/wool-hat/helmet), each with its own adjustment key */}
+        {equippedHead && (() => {
+          const headKey: AdjustmentKey =
+            equippedHead.id === 'wool-hat' ? 'wool-hat' :
+            equippedHead.id === 'helmet'   ? 'helmet'   : SLOT.HEAD
+          return (
+            <img
+              key={equippedHead.id}
+              src={getItemImage(equippedHead, true)}
+              alt=""
+              className="absolute inset-0 h-full w-auto object-contain"
+              style={buildLayerStyle(equippedHead.layerZ ?? 8, headKey)}
+              draggable={false}
+              onPointerDown={e => handleLayerPointerDown(headKey, e)}
+            />
+          )
+        })()}
 
         {/* Hit zones for unequipping — tight divs per slot, only in normal mode */}
         {!debugMode && (Object.entries(equipped) as [SlotId, string | null][]).map(([slotId, itemId]) => {
@@ -998,6 +1052,7 @@ function Pete({
           const zoneKey = item.id === 'boxers' ? 'underbody'
             : item.id === 'socks' ? 'underfeet'
             : item.id === 'gloves' ? 'hands'
+            : item.id === 'umbrella' ? 'hands'
             : null;
           if (!zoneKey) return null;
           const zone = SLOT_HIT_ZONES[zoneKey];
@@ -1141,21 +1196,27 @@ function DebugPanel({
   const feetIsSplit = equippedFeetItem?.isSplit ?? false
 
   // Build the list of adjustment keys to show in the layers panel.
-  // Includes both normal slot items and underlayer items (socks, boxers, gloves).
+  // Includes both normal slot items and underlayer items (socks, boxers, gloves, umbrella).
   const equippedKeys: AdjustmentKey[] = [
     // Normal slot items
     ...SLOT_ORDER.flatMap(slot => {
       if (equipped[slot] === null) return []
       if (slot === SLOT.FEET && feetIsSplit) return ['feet-left', 'feet-right'] as AdjustmentKey[]
-      // Umbrella uses its own adjustment key instead of 'head'
-      if (slot === SLOT.HEAD && equipped[slot] === 'umbrella') return ['umbrella'] as AdjustmentKey[]
+      // HEAD: use item-specific key for wool-hat and helmet
+      if (slot === SLOT.HEAD) {
+        const id = equipped[slot]
+        if (id === 'wool-hat') return ['wool-hat'] as AdjustmentKey[]
+        if (id === 'helmet')   return ['helmet'] as AdjustmentKey[]
+        return [slot as AdjustmentKey]
+      }
       return [slot as AdjustmentKey]
     }),
     // Underlayer items — map each to its adjustment key
     ...ITEMS.filter(i => i.isUnderlayer && equippedUnderlayers.includes(i.id)).flatMap(item => {
-      if (item.isSplit) return ['feet-left', 'feet-right'] as AdjustmentKey[]
+      if (item.isSplit && item.id === 'socks') return ['feet-left', 'feet-right'] as AdjustmentKey[]
+      if (item.isSplit && item.id === 'gloves') return ['hands-left', 'hands-right'] as AdjustmentKey[]
       if (item.id === 'boxers') return ['underbody'] as AdjustmentKey[]
-      if (item.id === 'gloves') return ['hands'] as AdjustmentKey[]
+      if (item.id === 'umbrella') return ['umbrella'] as AdjustmentKey[]
       return [(item.slot as AdjustmentKey)]
     }),
   ]
@@ -1707,7 +1768,7 @@ export default function App() {
     'cap':          { x: 187,   y: -324, scale: 1.00 },
     'coat-winter':  { x: 17,    y: -96,  scale: 1.00 },
     'boxers':       { x: 18,    y: -99,  scale: 1.00 },
-    'gloves':       { x: 0,     y: 0,    scale: 1.00 },
+    'gloves':       { x: -332,  y: 106,  scale: 1.20 },
     'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
     'helmet':       { x: -214,  y: -323, scale: 1.00 },
     'umbrella':     { x: -1179, y: 152,  scale: 2.00 },
@@ -1738,7 +1799,7 @@ export default function App() {
       layerTrainers, layerCowboyBoots, layerSocks, layerSocksLeft, layerSocksRight,
       windowSummer, windowAutumn, windowNight, windowRain,
       layerShorts, layerCap, layerCoatWinter,
-      layerBoxers, layerGloves, layerWoolHat, layerHelmet, layerUmbrella]
+      layerBoxers, layerGloves, layerGlovesLeft, layerGlovesRight, layerWoolHat, layerHelmet, layerUmbrella]
     srcs.forEach(src => { const img = new window.Image(); img.src = src })
   }, []);
 
@@ -1865,8 +1926,11 @@ export default function App() {
               // Normal slot item dropped onto Pete → equip in slot
               setEquipped(eq => ({ ...eq, [current.item.slot]: current.item.id }))
               if (current.item.defaultAdjustment) {
-                // Umbrella uses its own 'umbrella' key instead of the shared 'head' key
-                const adjKey: AdjustmentKey = current.item.id === 'umbrella' ? 'umbrella' : current.item.slot
+                // HEAD items each use their own key; all others use the slot key
+                const adjKey: AdjustmentKey =
+                  current.item.id === 'wool-hat' ? 'wool-hat' :
+                  current.item.id === 'helmet'   ? 'helmet'   :
+                  current.item.slot
                 setAdjustments(prev => ({
                   ...prev,
                   [adjKey]: { ...DEFAULT_ADJUSTMENT, ...current.item.defaultAdjustment },
