@@ -100,7 +100,7 @@ interface ClothingItem {
 }
 
 // AdjustmentKey covers regular slots + split sub-slots + underlayer slots
-type AdjustmentKey = SlotId | 'feet-left' | 'feet-right' | 'underbody' | 'hands'
+type AdjustmentKey = SlotId | 'feet-left' | 'feet-right' | 'underbody' | 'hands' | 'umbrella'
 
 interface DragState {
   item: ClothingItem
@@ -362,7 +362,7 @@ const ITEMS: ClothingItem[] = [
     layerZ: 9,
     colorizable: true,
     baseHue: 20,
-    defaultAdjustment: { x: 0, y: 0, scale: 2.00, rotate: 0 },
+    defaultAdjustment: { x: 46, y: 230, scale: 0.70, rotate: -11 },
   },
 ]
 
@@ -382,8 +382,9 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   body:         { x: 12, y: 11,  scale: 1.00, rotate: 0 },
   neck:         { x: -16, y: 22, scale: 1.15, rotate: 0 },
   head:         { x: 19, y: -59, scale: 1.00, rotate: 0 },
-  underbody:    { x: 27, y: -95, scale: 1.00, rotate: 0 },
+  underbody:    { x: 9, y: 19, scale: 1.05, rotate: 0 },
   hands:        { x: 0, y: 180, scale: 1.0, rotate: 0 },
+  umbrella:     { x: 46, y: 230, scale: 0.70, rotate: -11 },
 }
 
 // ── Hanger SVG ─────────────────────────────────────────────────────────────────
@@ -717,8 +718,8 @@ function Pete({
   const equippedNeck  = equipped.neck  ? ITEMS.find(i => i.id === equipped.neck)  : null
   const equippedHead  = equipped.head  ? ITEMS.find(i => i.id === equipped.head)  : null
 
-  const hideArms = !!(equippedTorso || equippedBody)
-  const hideFeet = !!equippedFeet
+  const hideArms = !!(equippedTorso || equippedBody || equippedUnderlayers.includes('boxers'))
+  const hideFeet = !!(equippedFeet || equippedUnderlayers.includes('socks'))
 
   const peteImg = hideArms && hideFeet
     ? peteNoArmsNoFeet
@@ -768,6 +769,11 @@ function Pete({
     if (key === 'hands') {
       const glovesEquipped = equippedUnderlayers.includes('gloves')
       return glovesEquipped ? (ITEMS.find(i => i.id === 'gloves') ?? null) : null
+    }
+    // umbrella → head slot item (only when umbrella is equipped)
+    if (key === 'umbrella') {
+      const headId = equipped[SLOT.HEAD]
+      return headId === 'umbrella' ? (ITEMS.find(i => i.id === 'umbrella') ?? null) : null
     }
     const itemId = equipped[key as SlotId]
     return itemId ? (ITEMS.find(i => i.id === itemId) ?? null) : null
@@ -942,16 +948,16 @@ function Pete({
           />
         )}
 
-        {/* z=8 (or layerZ) — Head layer (hat), top of everything; umbrella uses layerZ:9 */}
+        {/* z=8 (or layerZ) — Head layer (hat), top of everything; umbrella uses layerZ:9 + own key */}
         {equippedHead && (
           <img
             key={equippedHead.id}
             src={getItemImage(equippedHead, true)}
             alt=""
             className="absolute inset-0 h-full w-auto object-contain"
-            style={buildLayerStyle(equippedHead.layerZ ?? 8, SLOT.HEAD)}
+            style={buildLayerStyle(equippedHead.layerZ ?? 8, equippedHead.id === 'umbrella' ? 'umbrella' : SLOT.HEAD)}
             draggable={false}
-            onPointerDown={e => handleLayerPointerDown(SLOT.HEAD, e)}
+            onPointerDown={e => handleLayerPointerDown(equippedHead.id === 'umbrella' ? 'umbrella' : SLOT.HEAD, e)}
           />
         )}
 
@@ -1141,6 +1147,8 @@ function DebugPanel({
     ...SLOT_ORDER.flatMap(slot => {
       if (equipped[slot] === null) return []
       if (slot === SLOT.FEET && feetIsSplit) return ['feet-left', 'feet-right'] as AdjustmentKey[]
+      // Umbrella uses its own adjustment key instead of 'head'
+      if (slot === SLOT.HEAD && equipped[slot] === 'umbrella') return ['umbrella'] as AdjustmentKey[]
       return [slot as AdjustmentKey]
     }),
     // Underlayer items — map each to its adjustment key
@@ -1698,8 +1706,8 @@ export default function App() {
     'shorts':       { x: -89,   y: -79,  scale: 0.65 },
     'cap':          { x: 187,   y: -324, scale: 1.00 },
     'coat-winter':  { x: 17,    y: -96,  scale: 1.00 },
-    'boxers':       { x: 0,     y: 0,    scale: 1.00 },
-    'gloves':       { x: -363,  y: 357,  scale: 1.00 },
+    'boxers':       { x: 18,    y: -99,  scale: 1.00 },
+    'gloves':       { x: 0,     y: 0,    scale: 1.00 },
     'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
     'helmet':       { x: -214,  y: -323, scale: 1.00 },
     'umbrella':     { x: -1179, y: 152,  scale: 2.00 },
@@ -1857,7 +1865,8 @@ export default function App() {
               // Normal slot item dropped onto Pete → equip in slot
               setEquipped(eq => ({ ...eq, [current.item.slot]: current.item.id }))
               if (current.item.defaultAdjustment) {
-                const adjKey: AdjustmentKey = current.item.slot
+                // Umbrella uses its own 'umbrella' key instead of the shared 'head' key
+                const adjKey: AdjustmentKey = current.item.id === 'umbrella' ? 'umbrella' : current.item.slot
                 setAdjustments(prev => ({
                   ...prev,
                   [adjKey]: { ...DEFAULT_ADJUSTMENT, ...current.item.defaultAdjustment },
