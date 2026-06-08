@@ -1052,76 +1052,75 @@ function Pete({
           )
         })()}
 
-        {/* Hit zones for unequipping — tight divs per slot, only in normal mode */}
-        {/* z-index matches the item's visual layer so topmost layer captures clicks first */}
-        {!debugMode && (Object.entries(equipped) as [SlotId, string | null][]).map(([slotId, itemId]) => {
-          if (!itemId) return null;
-          const zone = SLOT_HIT_ZONES[slotId];
-          if (!zone) return null;
-          const item = ITEMS.find(i => i.id === itemId);
-          if (!item) return null;
-          // Use the item's visual layer z-index so higher layers capture events before lower ones
+        {/* Hit zones — one div per body sector, LIFO: topmost visual item captured first */}
+        {!debugMode && (() => {
+          // z-index defaults per equipped slot
           const SLOT_Z: Record<SlotId, number> = { feet: 5, legs: 2, torso: 4, body: 3, neck: 6, head: 8 }
-          const hitZ = item.layerZ ?? SLOT_Z[slotId] ?? 5
-          return (
-            <div
-              key={slotId}
-              style={{
-                position: 'absolute',
-                left: '10%',
-                width: '80%',
-                top: `${zone.top * 100}%`,
-                height: `${zone.height * 100}%`,
-                cursor: 'grab',
-                zIndex: hitZ,
-                // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onEquippedPointerDown(item, e);
-              }}
-            />
-          );
-        })}
 
-        {/* Hit zones for underlayer items — drag off Pete to unequip */}
-        {/* z-index matches item.layerZIndex so underlayers stay below their covering equipped items */}
-        {!debugMode && equippedUnderlayers.map(itemId => {
-          const item = ITEMS.find(i => i.id === itemId);
-          if (!item) return null;
-          // Determine which hit zone to use for this underlayer
-          const zoneKey = item.id === 'boxers' ? 'underbody'
-            : item.id === 'socks' ? 'underfeet'
-            : item.id === 'gloves' ? 'hands'
-            : item.id === 'umbrella' ? 'hands'
-            : null;
-          if (!zoneKey) return null;
-          const zone = SLOT_HIT_ZONES[zoneKey];
-          if (!zone) return null;
-          // Use the underlayer's own visual z-index for hit zone priority
-          const hitZ = item.layerZIndex ?? 1
-          return (
-            <div
-              key={`underlayer-${itemId}`}
-              style={{
-                position: 'absolute',
-                left: '10%',
-                width: '80%',
-                top: `${zone.top * 100}%`,
-                height: `${zone.height * 100}%`,
-                cursor: 'grab',
-                zIndex: hitZ,
-                // Uncomment to debug: background: 'rgba(0,255,0,0.2)',
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onUnderlayerPointerDown(item, e);
-              }}
-            />
-          );
-        })}
+          type SectorEntry = { item: ClothingItem; isUnderlayer: boolean; zIndex: number }
+          const sectorMap = new Map<string, SectorEntry[]>()
+
+          // Equipped slot items → zone key matches slotId
+          for (const [slotId, itemId] of Object.entries(equipped) as [SlotId, string | null][]) {
+            if (!itemId) continue
+            if (!SLOT_HIT_ZONES[slotId]) continue
+            const item = ITEMS.find(i => i.id === itemId)
+            if (!item) continue
+            const z = item.layerZ ?? SLOT_Z[slotId] ?? 5
+            const arr = sectorMap.get(slotId) ?? []
+            arr.push({ item, isUnderlayer: false, zIndex: z })
+            sectorMap.set(slotId, arr)
+          }
+
+          // Underlayer items → mapped to their body sector zone key
+          for (const itemId of equippedUnderlayers) {
+            const item = ITEMS.find(i => i.id === itemId)
+            if (!item) continue
+            const zoneKey = item.id === 'boxers'   ? 'underbody'
+                          : item.id === 'socks'    ? 'underfeet'
+                          : item.id === 'gloves'   ? 'hands'
+                          : item.id === 'umbrella' ? 'hands'
+                          : null
+            if (!zoneKey || !SLOT_HIT_ZONES[zoneKey]) continue
+            const z = item.layerZIndex ?? 1
+            const arr = sectorMap.get(zoneKey) ?? []
+            arr.push({ item, isUnderlayer: true, zIndex: z })
+            sectorMap.set(zoneKey, arr)
+          }
+
+          // Sort each sector: highest z-index first — topmost visual item is removed first (LIFO)
+          for (const arr of sectorMap.values()) arr.sort((a, b) => b.zIndex - a.zIndex)
+
+          return Array.from(sectorMap.entries()).map(([zoneKey, items]) => {
+            const zone = SLOT_HIT_ZONES[zoneKey]
+            if (!zone || items.length === 0) return null
+            const topItem = items[0]  // topmost visual item wins
+            return (
+              <div
+                key={`sector-${zoneKey}`}
+                style={{
+                  position: 'absolute',
+                  left: '10%',
+                  width: '80%',
+                  top: `${zone.top * 100}%`,
+                  height: `${zone.height * 100}%`,
+                  cursor: 'grab',
+                  zIndex: topItem.zIndex,
+                  // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
+                }}
+                onPointerDown={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (topItem.isUnderlayer) {
+                    onUnderlayerPointerDown(topItem.item, e)
+                  } else {
+                    onEquippedPointerDown(topItem.item, e)
+                  }
+                }}
+              />
+            )
+          })
+        })()}
       </div>
     </div>
   )
