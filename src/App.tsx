@@ -483,7 +483,8 @@ function Closet({
         style={{
           left: `${xPct * 100}%`,
           top: '38%',
-          transform: `translateX(-50%)`,
+          transform: `translateX(-50%) translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
+          transformOrigin: 'top center',
           opacity: isDragging ? 0.15 : 1,
           transition: 'opacity 0.2s',
           cursor: debugMode ? 'move' : 'grab',
@@ -502,13 +503,7 @@ function Closet({
         onPointerEnter={() => { if (!debugMode) onPointerEnter(item.id) }}
         onPointerLeave={() => { if (!debugMode) onPointerLeave() }}
       >
-        <div
-          className="flex flex-col items-center"
-          style={{
-            transform: `translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
-            transformOrigin: 'top center',
-          }}
-        >
+        <div className="flex flex-col items-center">
           <Hanger />
           <img
             src={getItemImage(item, false)}
@@ -549,7 +544,8 @@ function Closet({
         style={{
           left: `${xPct * 100}%`,
           top: '52%',
-          transform: `translateX(-50%)`,
+          transform: `translateX(-50%) translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
+          transformOrigin: 'bottom center',
           opacity: isDragging ? 0.15 : 1,
           transition: 'opacity 0.2s',
           cursor: debugMode ? 'move' : 'grab',
@@ -576,7 +572,6 @@ function Closet({
           style={{
             height: item.closetHeight ?? 'calc(551px * 0.9)',
             width: 'auto',
-            transform: `translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
             ...itemGlowStyle(item),
             transition: 'filter 0.15s',
           }}
@@ -612,7 +607,8 @@ function Closet({
         style={{
           left: `${xPct * 100}%`,
           top: '72%',
-          transform: `translateX(-50%)`,
+          transform: `translateX(-50%) translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
+          transformOrigin: 'bottom center',
           opacity: isDragging ? 0.15 : 1,
           transition: 'opacity 0.2s',
           cursor: debugMode ? 'move' : 'grab',
@@ -638,7 +634,6 @@ function Closet({
           style={{
             height: item.closetHeight ?? 'calc(551px * 0.9)',
             width: 'auto',
-            transform: `translate(${cadj.x}px, ${cadj.y}px) scale(${cadj.scale})`,
             ...itemGlowStyle(item),
             transition: 'filter 0.15s',
           }}
@@ -1840,7 +1835,7 @@ export default function App() {
     'jeans':        { x: -31,  y: -90,  scale: 0.85 },
     'pyjamas':      { x: 43,   y: -106, scale: 1.25 },
     'hat':          { x: -1,   y: 23,   scale: 1.00 },
-    'scarf':        { x: 5,    y: 175,  scale: 1.00 },
+    'scarf':        { x: 5,    y: 174,  scale: 1.00 },
     'trainers':     { x: 17,   y: 12,   scale: 0.65 },
     'socks':        { x: -336, y: 148,  scale: 1.65 },
     'cowboy-boots': { x: -34,  y: 14,   scale: 1.15 },
