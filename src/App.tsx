@@ -388,8 +388,8 @@ const DEFAULT_ADJUSTMENTS: Record<AdjustmentKey, LayerAdjustment> = {
   head:          { x: 19, y: -59, scale: 1.00, rotate: 0 },
   underbody:     { x: 9, y: 19, scale: 1.05, rotate: 0 },
   hands:         { x: 0, y: 180, scale: 1.0, rotate: 0 },
-  'hands-left':  { x: -80, y: 180, scale: 1.0, rotate: 0 },
-  'hands-right': { x: 80, y: 180, scale: 1.0, rotate: 0 },
+  'hands-left':  { x: 0, y: 0, scale: 1.5, rotate: 0 },
+  'hands-right': { x: 0, y: 0, scale: 1.5, rotate: 0 },
   umbrella:      { x: 46, y: 230, scale: 0.70, rotate: -11 },
   'wool-hat':    { x: 16, y: -64, scale: 0.95, rotate: 0 },
   'helmet':      { x: 16, y: -52, scale: 1.00, rotate: 0 },
@@ -727,7 +727,7 @@ function Pete({
   const equippedHead  = equipped.head  ? ITEMS.find(i => i.id === equipped.head)  : null
 
   const hideArms = !!(equippedTorso || equippedBody)
-  const hideFeet = !!equippedFeet
+  const hideFeet = !!(equippedFeet || equippedUnderlayers.includes('socks'))
 
   const peteImg = hideArms && hideFeet
     ? peteNoArmsNoFeet
@@ -837,6 +837,8 @@ function Pete({
         {/* Underlayer items — render at low z-index, always below outer clothing */}
         {ITEMS.filter(i => i.isUnderlayer && equippedUnderlayers.includes(i.id)).map(item => {
           const zIdx = item.layerZIndex ?? 1
+          // Bug 3: skip socks when feet are already equipped (boots/trainers cover them)
+          if (item.id === 'socks' && equippedFeet) return null
           if (item.isSplit && item.id === 'socks') {
             // Socks split rendering (left/right)
             return (
@@ -1916,7 +1918,7 @@ export default function App() {
 
           if (onPete && !current.wasEquipped) {
             if (current.item.isUnderlayer) {
-              // Underlayer item dropped onto Pete → toggle underlayer
+              // Underlayer item dropped onto Pete → toggle underlayer (deduplicated)
               setEquippedUnderlayers(prev =>
                 prev.includes(current.item.id)
                   ? prev.filter(id => id !== current.item.id)
