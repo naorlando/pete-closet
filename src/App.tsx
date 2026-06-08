@@ -869,7 +869,10 @@ function Pete({
                 'hands-left':  { x: 6,   y: 105, scale: 1.15, rotate: -15 },
                 'hands-right': { x: -6,  y: 106, scale: 1.15, rotate: 13 },
               },
-              // pyjamas removed — uses default hands-left/hands-right positions
+              'pyjamas': {
+                'hands-left':  { x: -13, y: 86, scale: 1.10, rotate: -7 },
+                'hands-right': { x: 11,  y: 80, scale: 1.10, rotate: 10 },
+              },
               'coat-winter': {
                 'hands-left':  { x: -17, y: 77,  scale: 1.10, rotate: -7 },
                 'hands-right': { x: 15,  y: 74,  scale: 1.10, rotate: 10 },
@@ -1110,8 +1113,8 @@ function Pete({
                   key="sector-hands-left"
                   style={{
                     position: 'absolute',
-                    left: '0%',
-                    width: '25%',
+                    left: '28%',
+                    width: '22%',
                     top: `${zone.top * 100}%`,
                     height: `${zone.height * 100}%`,
                     cursor: 'grab',
@@ -1124,8 +1127,8 @@ function Pete({
                   key="sector-hands-right"
                   style={{
                     position: 'absolute',
-                    left: '75%',
-                    width: '25%',
+                    left: '55%',
+                    width: '22%',
                     top: `${zone.top * 100}%`,
                     height: `${zone.height * 100}%`,
                     cursor: 'grab',
