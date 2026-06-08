@@ -1086,6 +1086,23 @@ function Pete({
           // Sort each sector: highest z-index first — topmost visual item is removed first (LIFO)
           for (const arr of sectorMap.values()) arr.sort((a, b) => b.zIndex - a.zIndex)
 
+          // Map sector zoneKey + topItem → the AdjustmentKey used by its visual layer
+          function getAdjKey(topItem: SectorEntry, zoneKey: string): AdjustmentKey | null {
+            if (topItem.isUnderlayer) {
+              if (topItem.item.id === 'socks')    return null // split — no single adj key
+              if (topItem.item.id === 'boxers')   return 'underbody'
+              if (topItem.item.id === 'gloves')   return null // split — handled per-div below
+              if (topItem.item.id === 'umbrella') return 'umbrella'
+              return null
+            }
+            // Equipped slot items
+            const id = topItem.item.id
+            if (id === 'wool-hat') return 'wool-hat'
+            if (id === 'helmet')   return 'helmet'
+            // Default: zoneKey matches the SlotId which is the AdjustmentKey
+            return zoneKey as AdjustmentKey
+          }
+
           return Array.from(sectorMap.entries()).flatMap(([zoneKey, items]) => {
             const zone = SLOT_HIT_ZONES[zoneKey]
             if (!zone || items.length === 0) return []
@@ -1103,6 +1120,8 @@ function Pete({
 
             // Gloves (hands zone): split into two narrow arm-width hit zones
             if (zoneKey === 'hands') {
+              const adjL = adjustments['hands-left']
+              const adjR = adjustments['hands-right']
               return [
                 <div
                   key="sector-hands-left"
@@ -1114,6 +1133,8 @@ function Pete({
                     height: `${zone.height * 100}%`,
                     cursor: 'grab',
                     zIndex: topItem.zIndex,
+                    transform: `translate(${adjL.x}px, ${adjL.y}px) scale(${adjL.scale}) rotate(${adjL.rotate}deg)`,
+                    transformOrigin: 'center center',
                     // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
                   }}
                   onPointerDown={handlePointerDown}
@@ -1128,12 +1149,17 @@ function Pete({
                     height: `${zone.height * 100}%`,
                     cursor: 'grab',
                     zIndex: topItem.zIndex,
+                    transform: `translate(${adjR.x}px, ${adjR.y}px) scale(${adjR.scale}) rotate(${adjR.rotate}deg)`,
+                    transformOrigin: 'center center',
                     // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
                   }}
                   onPointerDown={handlePointerDown}
                 />,
               ]
             }
+
+            const adjKey = getAdjKey(topItem, zoneKey)
+            const adj = adjKey ? adjustments[adjKey] : null
 
             return [
               <div
@@ -1146,6 +1172,8 @@ function Pete({
                   height: `${zone.height * 100}%`,
                   cursor: 'grab',
                   zIndex: topItem.zIndex,
+                  transform: adj ? `translate(${adj.x}px, ${adj.y}px) scale(${adj.scale}) rotate(${adj.rotate}deg)` : undefined,
+                  transformOrigin: 'center center',
                   // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
                 }}
                 onPointerDown={handlePointerDown}
@@ -1835,7 +1863,7 @@ export default function App() {
     'jeans':        { x: -31,  y: -90,  scale: 0.85 },
     'pyjamas':      { x: 43,   y: -106, scale: 1.25 },
     'hat':          { x: -1,   y: 23,   scale: 1.00 },
-    'scarf':        { x: 5,    y: 174,  scale: 1.00 },
+    'scarf':        { x: 42,   y: 76,   scale: 1.00 },
     'trainers':     { x: 17,   y: 12,   scale: 0.65 },
     'socks':        { x: -336, y: 148,  scale: 1.65 },
     'cowboy-boots': { x: -34,  y: 14,   scale: 1.15 },
