@@ -2027,7 +2027,16 @@ export default function App() {
               )
             } else {
               // Normal slot item dropped onto Pete → equip in slot
-              setEquipped(eq => ({ ...eq, [current.item.slot]: current.item.id }))
+              // Pyjamas compatibility: torso non-coat OR legs items auto-remove pyjamas
+              const isPyjamas      = equipped.body === 'pyjamas'
+              const slot           = current.item.slot
+              const isTorsoNonCoat = slot === SLOT.TORSO && current.item.id !== 'coat-winter'
+              const isLegs         = slot === SLOT.LEGS
+              if (isPyjamas && (isTorsoNonCoat || isLegs)) {
+                setEquipped(eq => ({ ...eq, body: null, [slot]: current.item.id }))
+              } else {
+                setEquipped(eq => ({ ...eq, [slot]: current.item.id }))
+              }
               if (current.item.defaultAdjustment) {
                 // HEAD items each use their own key; all others use the slot key
                 const adjKey: AdjustmentKey =
