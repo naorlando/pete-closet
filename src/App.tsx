@@ -863,14 +863,49 @@ function Pete({
             )
           }
           if (item.isSplit && item.id === 'gloves') {
-            // Gloves split rendering (left/right)
+            // Gloves split rendering (left/right) with per-outfit position overrides
+            const GLOVES_OVERRIDES: Record<string, { 'hands-left': LayerAdjustment; 'hands-right': LayerAdjustment }> = {
+              'shirt': {
+                'hands-left':  { x: 6,   y: 105, scale: 1.15, rotate: -15 },
+                'hands-right': { x: -6,  y: 106, scale: 1.15, rotate: 13 },
+              },
+              'pyjamas': {
+                'hands-left':  { x: -1,  y: 189, scale: 1.10, rotate: -10 },
+                'hands-right': { x: 10,  y: 86,  scale: 1.10, rotate: 10 },
+              },
+              'coat-winter': {
+                'hands-left':  { x: -17, y: 77,  scale: 1.10, rotate: -7 },
+                'hands-right': { x: 15,  y: 74,  scale: 1.10, rotate: 10 },
+              },
+            }
+            function getGlovesAdj(slot: 'hands-left' | 'hands-right'): LayerAdjustment {
+              const outfitOverride = GLOVES_OVERRIDES[equipped.torso ?? ''] ?? GLOVES_OVERRIDES[equipped.body ?? '']
+              return outfitOverride?.[slot] ?? adjustments[slot]
+            }
+            function buildGlovesStyle(zIndex: number, slot: 'hands-left' | 'hands-right'): React.CSSProperties {
+              const adj = getGlovesAdj(slot)
+              const isSelected = selectedSlot === slot
+              return {
+                zIndex,
+                transform: `translate(${adj.x}px, ${adj.y}px) scale(${adj.scale}) rotate(${adj.rotate}deg)`,
+                pointerEvents: debugMode ? 'auto' : 'none',
+                cursor: debugMode ? (isSelected ? 'move' : 'pointer') : 'default',
+                ...(debugMode ? {
+                  outline: isSelected
+                    ? '2px solid rgba(255,0,0,0.6)'
+                    : '2px dashed rgba(255,255,0,0.4)',
+                } : {
+                  outline: 'none',
+                }),
+              }
+            }
             return (
               <Fragment key={item.id}>
                 <img
                   src={layerGlovesLeft}
                   alt=""
                   className="absolute inset-0 h-full w-auto object-contain"
-                  style={buildLayerStyle(zIdx, 'hands-left')}
+                  style={buildGlovesStyle(zIdx, 'hands-left')}
                   draggable={false}
                   onPointerDown={e => handleLayerPointerDown('hands-left', e)}
                 />
@@ -878,7 +913,7 @@ function Pete({
                   src={layerGlovesRight}
                   alt=""
                   className="absolute inset-0 h-full w-auto object-contain"
-                  style={buildLayerStyle(zIdx, 'hands-right')}
+                  style={buildGlovesStyle(zIdx, 'hands-right')}
                   draggable={false}
                   onPointerDown={e => handleLayerPointerDown('hands-right', e)}
                 />
@@ -1018,12 +1053,16 @@ function Pete({
         })()}
 
         {/* Hit zones for unequipping — tight divs per slot, only in normal mode */}
+        {/* z-index matches the item's visual layer so topmost layer captures clicks first */}
         {!debugMode && (Object.entries(equipped) as [SlotId, string | null][]).map(([slotId, itemId]) => {
           if (!itemId) return null;
           const zone = SLOT_HIT_ZONES[slotId];
           if (!zone) return null;
           const item = ITEMS.find(i => i.id === itemId);
           if (!item) return null;
+          // Use the item's visual layer z-index so higher layers capture events before lower ones
+          const SLOT_Z: Record<SlotId, number> = { feet: 5, legs: 2, torso: 4, body: 3, neck: 6, head: 8 }
+          const hitZ = item.layerZ ?? SLOT_Z[slotId] ?? 5
           return (
             <div
               key={slotId}
@@ -1034,7 +1073,7 @@ function Pete({
                 top: `${zone.top * 100}%`,
                 height: `${zone.height * 100}%`,
                 cursor: 'grab',
-                zIndex: 10,
+                zIndex: hitZ,
                 // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
               }}
               onPointerDown={(e) => {
@@ -1047,6 +1086,7 @@ function Pete({
         })}
 
         {/* Hit zones for underlayer items — drag off Pete to unequip */}
+        {/* z-index matches item.layerZIndex so underlayers stay below their covering equipped items */}
         {!debugMode && equippedUnderlayers.map(itemId => {
           const item = ITEMS.find(i => i.id === itemId);
           if (!item) return null;
@@ -1059,6 +1099,8 @@ function Pete({
           if (!zoneKey) return null;
           const zone = SLOT_HIT_ZONES[zoneKey];
           if (!zone) return null;
+          // Use the underlayer's own visual z-index for hit zone priority
+          const hitZ = item.layerZIndex ?? 1
           return (
             <div
               key={`underlayer-${itemId}`}
@@ -1069,7 +1111,7 @@ function Pete({
                 top: `${zone.top * 100}%`,
                 height: `${zone.height * 100}%`,
                 cursor: 'grab',
-                zIndex: 10,
+                zIndex: hitZ,
                 // Uncomment to debug: background: 'rgba(0,255,0,0.2)',
               }}
               onPointerDown={(e) => {
@@ -1773,7 +1815,7 @@ export default function App() {
     'gloves':       { x: -307,  y: 125,  scale: 0.85 },
     'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
     'helmet':       { x: -214,  y: -323, scale: 1.00 },
-    'umbrella':     { x: -1179, y: 152,  scale: 2.00 },
+    'umbrella':     { x: 109,   y: 188,  scale: 2.15 },
   })
 
   // Keep closetAdjRef current so handlers always read up-to-date adjustments
