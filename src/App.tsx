@@ -718,8 +718,8 @@ function Pete({
   const equippedNeck  = equipped.neck  ? ITEMS.find(i => i.id === equipped.neck)  : null
   const equippedHead  = equipped.head  ? ITEMS.find(i => i.id === equipped.head)  : null
 
-  const hideArms = !!(equippedTorso || equippedBody || equippedUnderlayers.includes('boxers'))
-  const hideFeet = !!(equippedFeet || equippedUnderlayers.includes('socks'))
+  const hideArms = !!(equippedTorso || equippedBody)
+  const hideFeet = !!equippedFeet
 
   const peteImg = hideArms && hideFeet
     ? peteNoArmsNoFeet
