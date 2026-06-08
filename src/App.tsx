@@ -718,10 +718,10 @@ function Pete({
   onPetePointerUp,
   getItemImage,
 }: PeteProps) {
-  // body slot active → override legs + torso (pyjamas mode)
+  // body slot (pyjamas) overrides legs only — torso items (coat/shirt) still render on top
   const equippedBody  = equipped.body  ? ITEMS.find(i => i.id === equipped.body)  : null
   const equippedLegs  = !equippedBody && equipped.legs  ? ITEMS.find(i => i.id === equipped.legs)  : null
-  const equippedTorso = !equippedBody && equipped.torso ? ITEMS.find(i => i.id === equipped.torso) : null
+  const equippedTorso = equipped.torso ? ITEMS.find(i => i.id === equipped.torso) : null
   const equippedFeet  = equipped.feet  ? ITEMS.find(i => i.id === equipped.feet)  : null
   const equippedNeck  = equipped.neck  ? ITEMS.find(i => i.id === equipped.neck)  : null
   const equippedHead  = equipped.head  ? ITEMS.find(i => i.id === equipped.head)  : null
@@ -869,10 +869,7 @@ function Pete({
                 'hands-left':  { x: 6,   y: 105, scale: 1.15, rotate: -15 },
                 'hands-right': { x: -6,  y: 106, scale: 1.15, rotate: 13 },
               },
-              'pyjamas': {
-                'hands-left':  { x: -1,  y: 189, scale: 1.10, rotate: -10 },
-                'hands-right': { x: 10,  y: 86,  scale: 1.10, rotate: 10 },
-              },
+              // pyjamas removed — uses default hands-left/hands-right positions
               'coat-winter': {
                 'hands-left':  { x: -17, y: 77,  scale: 1.10, rotate: -7 },
                 'hands-right': { x: 15,  y: 74,  scale: 1.10, rotate: 10 },
@@ -1091,11 +1088,56 @@ function Pete({
           // Sort each sector: highest z-index first — topmost visual item is removed first (LIFO)
           for (const arr of sectorMap.values()) arr.sort((a, b) => b.zIndex - a.zIndex)
 
-          return Array.from(sectorMap.entries()).map(([zoneKey, items]) => {
+          return Array.from(sectorMap.entries()).flatMap(([zoneKey, items]) => {
             const zone = SLOT_HIT_ZONES[zoneKey]
-            if (!zone || items.length === 0) return null
+            if (!zone || items.length === 0) return []
             const topItem = items[0]  // topmost visual item wins
-            return (
+
+            const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+              e.preventDefault()
+              e.stopPropagation()
+              if (topItem.isUnderlayer) {
+                onUnderlayerPointerDown(topItem.item, e)
+              } else {
+                onEquippedPointerDown(topItem.item, e)
+              }
+            }
+
+            // Gloves (hands zone): split into two narrow arm-width hit zones
+            if (zoneKey === 'hands') {
+              return [
+                <div
+                  key="sector-hands-left"
+                  style={{
+                    position: 'absolute',
+                    left: '0%',
+                    width: '25%',
+                    top: `${zone.top * 100}%`,
+                    height: `${zone.height * 100}%`,
+                    cursor: 'grab',
+                    zIndex: topItem.zIndex,
+                    // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
+                  }}
+                  onPointerDown={handlePointerDown}
+                />,
+                <div
+                  key="sector-hands-right"
+                  style={{
+                    position: 'absolute',
+                    left: '75%',
+                    width: '25%',
+                    top: `${zone.top * 100}%`,
+                    height: `${zone.height * 100}%`,
+                    cursor: 'grab',
+                    zIndex: topItem.zIndex,
+                    // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
+                  }}
+                  onPointerDown={handlePointerDown}
+                />,
+              ]
+            }
+
+            return [
               <div
                 key={`sector-${zoneKey}`}
                 style={{
@@ -1108,17 +1150,9 @@ function Pete({
                   zIndex: topItem.zIndex,
                   // Uncomment to debug: background: 'rgba(255,0,0,0.2)',
                 }}
-                onPointerDown={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  if (topItem.isUnderlayer) {
-                    onUnderlayerPointerDown(topItem.item, e)
-                  } else {
-                    onEquippedPointerDown(topItem.item, e)
-                  }
-                }}
-              />
-            )
+                onPointerDown={handlePointerDown}
+              />,
+            ]
           })
         })()}
       </div>
@@ -1799,22 +1833,22 @@ export default function App() {
 
   // Closet item per-item adjustments (position + scale, debug only)
   const [closetAdjustments, setClosetAdjustments] = useState<Record<string, ClosetItemAdjustment>>({
-    'shirt':        { x: -34,   y: -97,  scale: 1.40 },
-    'jeans':        { x: -31,   y: -90,  scale: 0.85 },
-    'pyjamas':      { x: 69,    y: -106, scale: 1.25 },
-    'hat':          { x: -1,    y: 23,   scale: 1.00 },
-    'scarf':        { x: 51,    y: 75,   scale: 1.00 },
-    'trainers':     { x: 17,    y: 12,   scale: 0.65 },
-    'socks':        { x: -336,  y: 148,  scale: 1.65 },
-    'cowboy-boots': { x: -34,   y: 14,   scale: 1.15 },
-    'shorts':       { x: -89,   y: -79,  scale: 0.65 },
-    'cap':          { x: 187,   y: -324, scale: 1.00 },
-    'coat-winter':  { x: 17,    y: -96,  scale: 1.00 },
-    'boxers':       { x: 18,    y: -99,  scale: 1.00 },
-    'gloves':       { x: -307,  y: 125,  scale: 0.85 },
-    'wool-hat':     { x: -12,   y: -334, scale: 1.00 },
-    'helmet':       { x: -214,  y: -323, scale: 1.00 },
-    'umbrella':     { x: 109,   y: 188,  scale: 2.15 },
+    'shirt':        { x: -34,  y: -97,  scale: 1.40 },
+    'jeans':        { x: -31,  y: -90,  scale: 0.85 },
+    'pyjamas':      { x: 43,   y: -106, scale: 1.25 },
+    'hat':          { x: -1,   y: 23,   scale: 1.00 },
+    'scarf':        { x: 5,    y: 175,  scale: 1.00 },
+    'trainers':     { x: 17,   y: 12,   scale: 0.65 },
+    'socks':        { x: -336, y: 148,  scale: 1.65 },
+    'cowboy-boots': { x: -34,  y: 14,   scale: 1.15 },
+    'shorts':       { x: -89,  y: -79,  scale: 0.65 },
+    'cap':          { x: 187,  y: -324, scale: 1.00 },
+    'coat-winter':  { x: 3,    y: -96,  scale: 1.00 },
+    'boxers':       { x: 18,   y: -99,  scale: 1.00 },
+    'gloves':       { x: -307, y: 125,  scale: 0.85 },
+    'wool-hat':     { x: -12,  y: -334, scale: 1.00 },
+    'helmet':       { x: -214, y: -323, scale: 1.00 },
+    'umbrella':     { x: 109,  y: 188,  scale: 2.15 },
   })
 
   // Keep closetAdjRef current so handlers always read up-to-date adjustments
